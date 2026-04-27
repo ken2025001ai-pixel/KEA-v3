@@ -1,0 +1,101 @@
+/* ============================================================
+   KEA Graph View Color Coding
+   
+   功能：为 Obsidian Graph View 中的 KEA Ontology 节点按类型着色
+   
+   使用方法：
+   1. 确保 Ontology 文档的 YAML front matter 中包含 tags，如：
+      tags: [kea-object] / [kea-logic] / [kea-action]
+   2. 在 Graph View 的 Groups 面板中添加分组规则：
+      - tag:#kea-object  → 红色 (对象)
+      - tag:#kea-logic   → 蓝色 (逻辑)
+      - tag:#kea-action  → 绿色 (动作)
+      - tag:#kea-domain  → 紫色 (领域)
+   3. 本 CSS 片段增强 Graph View 的默认颜色对比度
+   ============================================================ */
+
+/* ---- 基础节点颜色增强 ---- */
+.graph-view.color-fill {
+    color: #9ca3af;
+    opacity: 0.7;
+}
+
+.graph-view.color-line {
+    color: #6b7280;
+    opacity: 0.4;
+}
+
+.graph-view.color-text {
+    color: #e5e7eb;
+}
+
+/* ---- 高亮状态 ---- */
+.graph-view.color-fill-focused {
+    color: #f59e0b;
+}
+
+.graph-view.color-line-highlight {
+    color: #f59e0b;
+    opacity: 0.8;
+}
+
+.graph-view.color-fill-highlight {
+    color: #fbbf24;
+}
+
+/* ---- 未解析链接 ---- */
+.graph-view.color-fill-unresolved {
+    color: #ef4444;
+    opacity: 0.5;
+}
+
+/* ============================================================
+   以下为推荐配色（在 Graph View Groups 中对应设置）
+   
+   红色系 - 对象 (Object)
+   蓝色系 - 逻辑 (Logic/Process)  
+   绿色系 - 动作 (Action)
+   紫色系 - 领域 (Domain)
+   橙色系 - 模板/元数据 (Template/Meta)
+   ============================================================ */
+
+/* 对象节点 - 暖红色 */
+.graph-view.color-fill.tag-kea-object,
+.theme-dark .graph-view.color-fill.tag-kea-object {
+    color: #f87171;
+}
+
+/* 逻辑节点 - 冷蓝色 */
+.graph-view.color-fill.tag-kea-logic,
+.theme-dark .graph-view.color-fill.tag-kea-logic {
+    color: #60a5fa;
+}
+
+/* 动作节点 - 鲜绿色 */
+.graph-view.color-fill.tag-kea-action,
+.theme-dark .graph-view.color-fill.tag-kea-action {
+    color: #4ade80;
+}
+
+/* 领域节点 - 紫色 */
+.graph-view.color-fill.tag-kea-domain,
+.theme-dark .graph-view.color-fill.tag-kea-domain {
+    color: #c084fc;
+}
+
+/* Light theme 适配 */
+.theme-light .graph-view.color-fill.tag-kea-object {
+    color: #dc2626;
+}
+
+.theme-light .graph-view.color-fill.tag-kea-logic {
+    color: #2563eb;
+}
+
+.theme-light .graph-view.color-fill.tag-kea-action {
+    color: #16a34a;
+}
+
+.theme-light .graph-view.color-fill.tag-kea-domain {
+    color: #9333ea;
+}

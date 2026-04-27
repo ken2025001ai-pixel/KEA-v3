@@ -1,0 +1,38 @@
+{
+  "name": "kea-openclaw",
+  "version": "3.0.0",
+  "description": "KEA (Knowledge Extraction Agent) for OpenClaw — Business knowledge extraction and ontology modeling",
+  "main": "SKILL.md",
+  "scripts": {
+    "postinstall": "node scripts/install.js",
+    "test": "cd ../kea && python3 -m unittest discover -v tests/"
+  },
+  "keywords": [
+    "openclaw",
+    "openclaw-skill",
+    "ontology",
+    "knowledge-extraction",
+    "business-process",
+    "mermaid",
+    "obsidian"
+  ],
+  "author": "KEA Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/kea.git",
+    "directory": "openclaw"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/kea/issues"
+  },
+  "homepage": "https://github.com/your-org/kea/tree/main/openclaw#readme",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "openclaw": {
+    "skill": true,
+    "minVersion": "0.1.0",
+    "category": "productivity"
+  }
+}

@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+
+# Build artifacts
+*.tar.gz
+*.zip
+
+# Obsidian
+.obsidian/
+
+# Claude Code
+.claude/
