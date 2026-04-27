@@ -104,7 +104,22 @@ OBJECTS_DIR: {VAULT_PATH}/30-Ontology/objects/{DOMAIN_EN}/
 CHECK_TYPE: objects
 ```
 
-等待完成，获取覆盖率数值和未覆盖清单。
+等待完成，获取覆盖率报告。根据返回结果：
+- **返回有效覆盖率报告** → 获取覆盖率数值和未覆盖清单，进入 Step 7
+- **返回空或格式异常** → 可能源数据不足，询问用户："覆盖率报告异常，是否跳过覆盖率检查直接进入结构校验？"
+- **BLOCKED / NEEDS_CONTEXT** → 展示原因，询问用户处置
+
+### Step 7: 运行 kea validate 结构校验
+
+```bash
+cd {PROJECT_ROOT} && python3 -m kea --format json validate {OBJECTS_DIR}
+```
+
+从 JSON 输出中提取：
+- `errors` — 结构错误数（条件 ④）
+- `reports[].issues[]` 中 category=`引用失效` 的 issue — 死链问题（条件 ⑤）
+
+若 `errors > 0`，展示错误明细，询问用户处置方式。
 
 ## 门控评估（G5）
 
@@ -115,8 +130,8 @@ CHECK_TYPE: objects
 | ① 对象数量 | 统计 objects/{DOMAIN_EN}/ 下 .md 文件数 | ≥ `ceil(G1候选对象数 × COVERAGE_THRESHOLD / 100)` |
 | ② 覆盖率 | 读取 coverage-check 报告 | ≥ COVERAGE_THRESHOLD% |
 | ③ 每个对象有主键 | Grep 每个文件中 `主键.*是` | 全部对象至少 1 个主键字段 |
-| ④ 结构错误 | 运行 rule-check-agent（仅 objects 范围） | 错误 = 0 |
-| ⑤ 死链 | 检查每个文件中 `[[链接]]` 是否有对应文件 | 死链 = 0 |
+| ④ 结构错误 | `kea validate` 输出的 `errors` 字段 | 错误 = 0 |
+| ⑤ 死链 | `kea validate` 输出中 category=`引用失效` 的 issue | 死链 = 0 |
 
 展示检查结果。如有失败项（❌），说明原因，进入失败处理流程。
 

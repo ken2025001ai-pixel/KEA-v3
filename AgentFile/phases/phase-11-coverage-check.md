@@ -24,7 +24,15 @@
 
 ### Step 1: 更新 chain-state.md 为 in_progress
 
-### Step 2: Dispatch 完备性检查 Agent
+### Step 2: 运行 kea status 获取基线统计
+
+```bash
+cd {PROJECT_ROOT} && python3 -m kea --format json status {VAULT_PATH}/30-Ontology/
+```
+
+从 JSON 输出中提取各类型文档数量和状态，作为覆盖率仪表盘的基线数据。将 `{doc_count}`、`{doc_stats}` 等结果传入 Step 3 的 Dispatch prompt。
+
+### Step 3: Dispatch 完备性检查 Agent
 
 读取 `~/.claude/skills/kea/skills/coverage-check/SKILL.md`，Dispatch，全量模式：
 
@@ -35,11 +43,12 @@ LOGIC_DIR: {LOGIC_DIR}
 ACTIONS_DIR: {ACTIONS_DIR}
 RULES_DIR: {RULES_DIR}
 CHECK_TYPE: all
+KEY_DOC_COUNTS: {kea status 输出的各类型文档计数}
 ```
 
 等待完成，获取覆盖率报告。
 
-### Step 3: 展示覆盖率仪表盘
+### Step 4: 展示覆盖率仪表盘
 
 ```
 完备性验证结果：

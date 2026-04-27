@@ -169,9 +169,16 @@ class PseudocodeExecutor:
                 continue
 
             elif line.startswith("function "):
-                # 函数定义 — 跳过（只执行主逻辑）
-                func_end = self._find_block_end(lines, i + 1, indent)
-                i = func_end
+                # 函数定义 — main 执行其体，其他函数跳过
+                func_name = line[9:].split("(")[0].strip()
+                if func_name == "main":
+                    func_end = self._find_block_end(lines, i + 1, indent)
+                    block_lines = lines[i + 1:func_end]
+                    self._execute_block(block_lines, trace, 0, indent)
+                    i = func_end
+                else:
+                    func_end = self._find_block_end(lines, i + 1, indent)
+                    i = func_end
                 continue
 
             i += 1
@@ -225,7 +232,7 @@ class PseudocodeExecutor:
 
             # call_action
             elif "call_action" in line:
-                # 记录调用，不实际执行
+                # 记录调用，不实际执行。支持 call_action("id") 和 call_action("id", {...})
                 match = re.search(r'call_action\s*\(\s*["\']([^"\']+)["\']', line)
                 if match:
                     action_id = match.group(1)

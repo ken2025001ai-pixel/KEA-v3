@@ -103,6 +103,9 @@ class DocumentParser:
         doc.pseudocode = self._extract_pseudocode(body)
         doc.mermaid_diagram = self._extract_mermaid(body)
 
+        # 提取 wikilinks
+        doc.wikilinks = self.md_parser.extract_obsidian_links(body)
+
         # 根据文档类型解析特定 section
         if doc.doc_type == DocType.OBJECT:
             self._parse_object_sections(doc, sections)
@@ -183,8 +186,30 @@ class DocumentParser:
 
     def _parse_rule_sections(self, doc: KnowledgeDocument, sections: dict[str, str]) -> None:
         """解析 Rule 特有 section."""
-        # Rule 的大部分内容在 YAML FM 中，Body 通常只有规则表达式和说明
-        pass
+        # 规则条件: 提取 IF/THEN 代码块
+        if "规则条件" in sections:
+            content = sections["规则条件"]
+            code_blocks = self.md_parser.extract_code_blocks(content)
+            if code_blocks and not doc.rule_expression:
+                doc.rule_expression = code_blocks[0]
+            # 如果没有代码块，尝试直接提取文本
+            elif not doc.rule_expression:
+                doc.rule_expression = content.strip()
+
+        # 违规处理: 提取为结构化 bullet items
+        if "违规处理" in sections:
+            items = self.md_parser.extract_bullet_items(sections["违规处理"])
+            if items:
+                doc.business_rules = items
+
+        # 例外情况: 存储为 boundary_conditions
+        if "例外情况" in sections:
+            items = self.md_parser.extract_bullet_items(sections["例外情况"])
+            for item in items:
+                doc.boundary_conditions.append(BoundaryCondition(
+                    scenario=item.split("：")[0] if "：" in item else item,
+                    handling=item.split("：")[1] if "：" in item else "",
+                ))
 
     def _extract_pseudocode(self, body: str) -> str:
         """提取伪代码块内容."""

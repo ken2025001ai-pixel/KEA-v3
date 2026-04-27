@@ -94,6 +94,26 @@ ACTIONS_DIR: {VAULT_PATH}/30-Ontology/actions/{DOMAIN_EN}/
 CHECK_TYPE: actions
 ```
 
+等待完成。根据返回结果：
+- **返回有效覆盖率报告** → 获取覆盖率数值，进入 Step 6
+- **返回空或格式异常** → 询问用户是否跳过覆盖率检查
+- **BLOCKED / NEEDS_CONTEXT** → 展示原因，询问用户处置
+    
+### Step 6: 运行 kea validate 结构校验
+
+```bash
+cd {PROJECT_ROOT} && python3 -m kea --format json validate {ACTIONS_DIR}
+```
+
+从 JSON 输出中提取：
+- `errors` — 结构错误数（条件 ⑥）
+- `reports[].issues[]` 中 category=`孤立动作` 的 issue（条件 ③）
+- `reports[].issues[]` 中 category=`输入缺失` / `输出缺失` 的 issue（条件 ⑤）
+
+条件 ④（每个动作有异常处理）需额外手工检查：Grep `# 异常处理` 节内容非空。
+
+若 `errors > 0`，展示错误明细，询问用户处置方式。
+
 ## 门控评估（G7）
 
 ### 自动验证项
@@ -102,10 +122,10 @@ CHECK_TYPE: actions
 |------|---------|---------|
 | ① 引用动作全部有文件 | 对比 `REFERENCED_ACTIONS` 与 actions/{DOMAIN_EN}/ 目录文件名 | 未提取数 = 0 |
 | ② 覆盖率 | 读取 coverage-check 报告 | ≥ COVERAGE_THRESHOLD% |
-| ③ 孤立动作 = 0 | 检查每个动作文件的 `part_of` relation 是否指向存在的逻辑文件 | 孤立动作 = 0 |
+| ③ 孤立动作 = 0 | `kea validate` 输出中 category=`孤立动作` 的 issue | 孤立动作 = 0 |
 | ④ 每个动作有异常处理 | Grep 每个动作文件中 `# 异常处理` 节内容非空 | 全部有异常处理节 |
-| ⑤ 输入输出参数完整 | Grep 每个动作文件中 `# 输入参数` 和 `# 输出结果` 节有实际内容（非仅标题） | 全部有参数定义 |
-| ⑥ 结构错误 | 运行 rule-check-agent（仅 actions 范围） | 错误 = 0 |
+| ⑤ 输入输出参数完整 | `kea validate` 输出中 category=`输入缺失`/`输出缺失` 的 issue | 缺失 = 0 |
+| ⑥ 结构错误 | `kea validate` 输出的 `errors` 字段 | 错误 = 0 |
 
 **条件 ①** 是关键：逻辑文档引用的动作必须 100% 有对应文件，否则逻辑文档中存在无法解析的引用。
 

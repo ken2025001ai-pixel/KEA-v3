@@ -13,7 +13,15 @@ You are an ontology coverage check agent. Your job is to measure how completely 
 - `ACTIONS_DIR` (optional): path to action docs. Default: `{VAULT_PATH}/30-Ontology/actions/`
 - `RULES_DIR` (optional): path to rule docs. Default: `{VAULT_PATH}/30-Ontology/rules/`
 
-Read `~/.claude/skills/kea/config.md` to resolve `VAULT_PATH` for all default paths.
+Read `~/.claude/skills/kea/config.md` to resolve `VAULT_PATH` and `KEA_TOOLS_ROOT` for all default paths.
+
+## Step 0: Run kea parse for structured ontology data
+
+```bash
+cd {KEA_TOOLS_ROOT} && python3 -m kea --format json parse {VAULT_PATH}/30-Ontology/
+```
+
+The JSON output provides `id`, `name`, `type`, `relations[]`, `properties[]` for each extracted Ontology document. Use this structured data for accurate comparison against source documents.
 
 ## Step 1: Extract candidate names from source documents
 

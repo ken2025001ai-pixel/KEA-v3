@@ -36,7 +36,7 @@ VALIDATION_REPORT_DIR: {VAULT_PATH}/RAWData/KEAOutput/reports/validation/
 ### Step A1: 运行结构分析
 
 ```bash
-cd {PROJECT_ROOT} && python3 -m kea mermaid {DIAGRAMS_DIR} --format json
+cd {PROJECT_ROOT} && python3 -m kea --format json mermaid {DIAGRAMS_DIR}
 ```
 
 读取输出，提取每个流程图的以下信息：
@@ -83,7 +83,7 @@ cd {PROJECT_ROOT} && python3 -m kea mermaid {DIAGRAMS_DIR} --format json
 
 为 Dispatch 准备上下文：
 
-1. 对每个流程图，运行 `python3 -m kea mermaid {文件} --format json` 获取解析结果（节点列表、边列表、decision_branches）
+1. 对每个流程图，运行 `python3 -m kea --format json mermaid {文件}` 获取解析结果（节点列表、边列表、decision_branches）
 2. 收集所有流程图名称，建立**名称清单**
 3. 读取每个流程图的 Mermaid 源码
 
@@ -107,7 +107,11 @@ FLOWCHART_DATA:
 
 等待完成，获取 JSON 格式的问题清单。
 
-**若 sub-skill 返回 BLOCKED 或 NEEDS_CONTEXT**：根据原因补充信息后重新 Dispatch。
+根据返回结果处理：
+- **返回有效 JSON 数组（非空）** → 有问题需处理，进入 Step B3
+- **返回 `[]`** → 无任何语义问题，直接进入门控评估
+- **返回 BLOCKED / NEEDS_CONTEXT** → 根据原因补充信息后重新 Dispatch
+- **返回格式异常** → 展示原始输出，询问用户："输出格式异常，是否重试？"
 
 ### Step B3: 生成语义分析报告
 

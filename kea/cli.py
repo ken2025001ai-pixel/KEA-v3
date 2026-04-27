@@ -628,13 +628,13 @@ def main() -> int:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 示例:
-  kea parse ontology/objects/订单.md --format json
-  kea validate ontology/ --format json
-  kea trace ontology/logic/创建订单.md --format json
-  kea codegen ontology/ --output codegen/ --format json
-  kea status ontology/ --format json
-  kea index ontology/ --format json
-  kea impact 订单.md --base-dir ontology/ --format json
+  kea --format json parse ontology/objects/订单.md
+  kea --format json validate ontology/
+  kea --format json trace ontology/logic/创建订单.md
+  kea --format json codegen ontology/ --output codegen/
+  kea --format json status ontology/
+  kea --format json index ontology/
+  kea --format json impact 订单.md --base-dir ontology/
         """,
     )
 

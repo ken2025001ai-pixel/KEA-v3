@@ -94,78 +94,94 @@ For each unique rule candidate:
 
 **Skip if in EXISTING_FILES or not in 补充提取目标 (when set).**
 
-Write `RULES_DIR/{规则名称}.md`. Use English snake_case for filename (e.g., `high_value_dual_approval.md`). **CRITICAL**: populate all YAML fields and `relations`.
+Write `RULES_DIR/{规则名称}.md` following `rule-template.md`. Use English snake_case for filename. **CRITICAL**: populate all YAML fields including `category`, `rule_type`, `severity`, `applies_to`, `trigger`, `rule_expression`, `error_message`.
 
 ```markdown
 ---
 type: rule
-id: {english_snake_case, e.g. high_value_dual_approval}
+id: rule_{snake_case_id}
 name: {中文规则名称}
-domain: {业务领域，与受约束的对象/流程保持一致；跨域规则用 _shared}
-status: draft
-version: "1.0"
-tags: [kea-rule]
+category: {状态机约束|数据一致性|计算公式|权限控制|业务校验}
 rule_type: {validation | guard | derivation | policy}
-scope: {object | action | logic | cross-object}
+severity: {critical|high|medium|low}
+
+applies_to:
+  - object: {对象id}
+    field: {字段名}
+  - action: {动作id}
+
+trigger: {什么情况下触发此规则}
+
+rule_expression: |
+  {规则的具体表达式或逻辑描述}
+
+error_message: "{违反规则时的错误提示信息}"
+
 relations:
-  - {target: "对象名称", type: "constrains", description: "约束该对象的何种属性或实例"}
+  - {target: "对象名称", type: "constrains", description: "约束该对象的何种属性"}
   - {target: "流程名称", type: "guards", description: "作为该流程的前置条件"}
-  - {target: "动作名称", type: "guards", description: "作为该动作的前置条件"}
 ---
 
 # 规则描述
-{2-4句话：规则的业务含义、来源依据和执行效果。避免泛泛而谈。
- 例：单笔采购金额超过10万元时，必须经过 CFO 和 CPO 双重审批，确保高额支出受到充分监督。
-     此规则派生自《采购管理制度》第5.3条，适用于所有采购订单实例。}
+{该规则的业务背景，为什么需要这条规则，违反的后果}
 
-# 适用范围
-- 对象：[[对象名称]]（如无则省略）
-- 流程：[[流程名称]]（如无则省略）
-- 动作：[[动作名称]]（如无则省略）
-
-# 规则条件
+## 规则条件
 ```
-IF {条件表达式，使用对象字段名}
+IF {条件表达式，使用对象字段名，如 采购订单.总金额 > 100000}
 THEN {结论或要求的状态}
 [ELSE {例外路径}]
 ```
 
-# 违规处理
+## 违规处理
 - 违规等级：{硬约束 | 软约束 | 警告}
 - 处理方式：{拦截并返回错误 | 记录告警日志 | 触发人工审批}
-- 错误信息：{具体提示文字，如 "金额超过10万，需获取 CFO 审批后方可提交"}
+- 错误信息：{具体提示文字}
 
-# 例外情况
+## 例外情况
 - {例外场景1}：{例外处理方式}
 - {无例外情况则填'无'}
 
-# 规则来源
+## 规则来源
 - 业务依据：{法规/合同/管理规定/系统设计决策}
-- 有效期：{起始日期 或 "长期有效"}
+- 派生来源：{从 Logic/Action 文档中推断的，标注来源文件}
+
+## 规则示例
+**合法情况：**
+- {输入} → {输出}（满足规则）
+
+**非法情况：**
+- {输入} → {输出}（违反规则，触发 error_message）
 ```
 
 ### Field Rules
 
 | Field | Rule |
 |-------|------|
-| `id` | English snake_case, globally unique in the same namespace as objects/logic/actions. |
-| `name` | Chinese rule name. Must match filename stem (after removing `.md`). |
-| `domain` | Inherit from the primary object/logic being constrained. Use `_shared` for cross-domain policies. |
-| `rule_type` | One of: `validation`, `guard`, `derivation`, `policy`. |
-| `scope` | `object` = constrains a single object's fields; `action` = guards an action; `logic` = guards a logic process; `cross-object` = spans multiple objects. |
-
-### Relations Rules
-
-- **Every rule MUST declare at least one relation** — a rule with no targets is useless.
-- Valid relation types for rules: `constrains` (to objects), `guards` (to logic or actions)
-- Objects/Logic/Actions may optionally declare back-references (`governed_by` / `guarded_by`), but this is not required by the extractor — the Rule document is the authoritative declaration.
+| `id` | English snake_case，全局唯一 |
+| `name` | 中文规则名，与文件名 stem 一致 |
+| `category` | 五选一：状态机约束/数据一致性/计算公式/权限控制/业务校验 |
+| `rule_type` | 四选一：validation/guard/derivation/policy |
+| `severity` | critical/high/medium/low |
+| `applies_to` | 结构化数组，每项含 `object`(对象id) 和 `field`(字段名) |
+| `trigger` | 触发条件，必填 |
+| `rule_expression` | 规则表达式/逻辑描述，必填 |
+| `error_message` | 违规时的错误提示，可使用 `{变量}` 占位符 |
+| `relations` | 补充关系声明，类型：`constrains`(→对象) / `guards`(→流程或动作) |
 
 ### Content Rules
 
-- **规则描述**: Be specific. Avoid "检查字段合法性" — instead say what specific field, what specific condition, what specific business outcome.
-- **规则条件**: Use actual field names from the object's attribute table (中文名称 column). E.g., `IF 采购订单.总金额 > 100000`.
-- **违规处理**: Distinguish hard vs. soft constraints explicitly. Hard = blocks execution. Soft = allows execution with warning/log.
-- **规则来源**: If derivable from source documents, cite the source. If inferred from logic branches, note "派生自 [[流程名称]] 决策节点".
+- **规则描述**: 具体到字段名和业务条件，禁止"检查字段合法性"这类泛泛描述
+- **规则条件**: IF/THEN 格式，字段名引用目标对象属性表（中文名称列）
+- **违规处理**: 明确违规等级（硬约束/软约束/警告）和处理方式
+- **规则来源**: 从源文档或 Logic 决策节点追溯。无法确定时标注"派生自业务惯例"
+
+### Self-Validation: 每写完一个文件立即 kea parse
+
+```bash
+cd {KEA_TOOLS_ROOT} && python3 -m kea --format json parse {RULES_DIR}/{规则名}.md
+```
+
+从 `~/.claude/skills/kea/config.md` 读取 `KEA_TOOLS_ROOT`。若 `"success": true` → 继续下一个。若解析失败 → 修复后重试直到通过。
 
 ## Step 3: Return structured result
 

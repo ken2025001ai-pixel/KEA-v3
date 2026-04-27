@@ -98,6 +98,27 @@ LOGIC_DIR: {VAULT_PATH}/30-Ontology/logic/{DOMAIN_EN}/
 CHECK_TYPE: logic
 ```
 
+等待完成。根据返回结果：
+- **返回有效覆盖率报告** → 获取覆盖率数值和未覆盖清单，进入 Step 7
+- **返回空或格式异常** → 询问用户："覆盖率报告异常，是否跳过覆盖率检查？"
+- **BLOCKED / NEEDS_CONTEXT** → 展示原因，询问用户处置
+
+### Step 7: 运行 kea validate 结构校验
+
+```bash
+cd {PROJECT_ROOT} && python3 -m kea --format json validate {LOGIC_DIR}
+```
+
+从 JSON 输出中提取：
+- `errors` — 结构错误数（条件 ⑦）
+- `reports[].issues[]` 中 category 为 `引用失效` 的 issue — 即 dead links（条件 ③）
+- `reports[].issues[]` 中 category 为 `输入缺失` / `输出缺失` 的 issue（条件 ④）
+- `reports[].issues[]` 中 category 为 `伪代码引用失效` 的 issue — 子流程引用错误（条件 ⑥）
+
+条件 ⑤（判断节点分支完整性）仍需手工检查：Grep 逻辑描述中以 `?` 结尾的行，检查后续是否有 `- 若` 分支。
+
+若 `errors > 0`，展示错误明细，询问用户处置方式。
+    
 ## 门控评估（G6）
 
 ### 自动验证项
@@ -106,11 +127,11 @@ CHECK_TYPE: logic
 |------|---------|---------|
 | ① 逻辑数量 | 统计 logic/{DOMAIN_EN}/ 下 .md 文件数 | ≥ `ceil(G1候选逻辑数 × COVERAGE_THRESHOLD / 100)` |
 | ② 覆盖率 | 读取 coverage-check 报告 | ≥ COVERAGE_THRESHOLD% |
-| ③ 对象链接有效性 | 提取所有 `[[链接]]`，检查对应文件是否存在于 OBJECTS_DIR | 死链 = 0 |
-| ④ 输入/输出表完整性 | Grep 每个逻辑文档，检查 `# 输入` 和 `# 输出` 节是否存在 | 全部逻辑均有两节 |
-| ⑤ 判断节点分支完整性 | Grep 逻辑描述中以 `?` 结尾的行，检查后续是否有 `- 若` 分支 | 每个判断节点 ≥ 2 个分支 |
-| ⑥ 子流程引用一致性 | 检查 `调用[[X]]逻辑文档` 是否同时出现在"与流程关联"节 | 不一致数 = 0 |
-| ⑦ 结构错误 | 运行 rule-check-agent（仅 logic 范围） | 错误 = 0 |
+| ③ 对象链接有效性 | `kea validate` 输出中 category=`引用失效` 的 issue | 死链 = 0 |
+| ④ 输入/输出表完整性 | `kea validate` 输出中 category=`输入缺失`/`输出缺失` 的 issue | 缺失 = 0 |
+| ⑤ 判断节点分支完整性 | Grep 逻辑描述中以 `?` 结尾的行 | 每个判断节点 ≥ 2 个分支 |
+| ⑥ 子流程引用一致性 | `kea validate` 输出中 category=`伪代码引用失效` 的 issue | 不一致 = 0 |
+| ⑦ 结构错误 | `kea validate` 输出的 `errors` 字段 | 错误 = 0 |
 
 **条件 ③ 是最高优先级验证**：死链意味着 Phase 5 输出不完整，必须回退。
 

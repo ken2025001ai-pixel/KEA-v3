@@ -46,13 +46,12 @@
 若 `LOCAL_DOC_PATHS` 或 `LOCAL_DOC_DIRS` 非空，执行以下命令将源文档转换为标准化 MD：
 
 ```bash
-python3 -m kea ingest \
+python3 -m kea --format json ingest \
   [--source <path>（每个 LOCAL_DOC_PATHS 条目）] \
   [--source-dir <dir>（每个 LOCAL_DOC_DIRS 条目）] \
   --domain {DOMAIN_EN} \
   --domain-cn {DOMAIN_CN} \
-  --output-dir {VAULT_PATH}/RAWData/sources/{DOMAIN_EN}/ \
-  --format json
+  --output-dir {VAULT_PATH}/RAWData/sources/{DOMAIN_EN}/
 ```
 
 读取 JSON 输出，向用户展示摘要：

@@ -1,5 +1,22 @@
 # KEA AgentFile — 开发规范
 
+## 核心设计原则
+
+### 原则一：Skill 为主，工具为辅
+
+- Skill 应**积极调用 kea 工具**完成确定性校验，LLM 只负责它擅长的语义理解和创造性提取
+- 能用工具验证的必须调用工具，不允许 LLM 猜测或手工模拟
+- 工具不满足需求时**规划新工具**，不在 phase/skill 中写 ad-hoc 校验逻辑
+
+### 原则二：追求确定性，人类专家舒适高效
+
+- **人类只做工具做不了的事**：自动验证在前，人类确认在后
+- **Sub-skill 输出后先跑工具校验**，通过后才能进入人类审视
+- **疑虑前置**：DONE_WITH_CONCERNS 先处置再展示
+- **每次交互让专家有获得感**：展示进度、变更摘要、校验明细
+
+---
+
 ## 一、文件职责边界
 
 ### 文件角色
@@ -14,9 +31,9 @@
 
 ```
 SKILL.md（路由）
-  └─ phase-N.md（编排 + 门控）          ← 主 session
-        └─ skills/{name}/SKILL.md（执行）  ← subagent
-              └─ python3 -m kea           ← 确定性工具
+  └─ phase-N.md（编排 + 门控）                ← 主 session
+        ├─ skills/{name}/SKILL.md（LLM 推理）  ← subagent
+        └─ python3 -m kea <cmd>（确定性校验）  ← Phase 直接调用
 ```
 
 ### 关键约束
@@ -25,6 +42,35 @@ SKILL.md（路由）
 - **Phase 文件在主 session 执行**：需要与用户持续对话（门控确认、决策询问），不能 Dispatch 为独立 subagent
 - **Sub-skill 不与用户交互**：只处理数据并返回结构化结果给 phase 文件
 - **所有人类决策交互归属 phase 文件**：未覆盖项决策、问题处置、确认操作均在主 session 完成
+
+### Sub-skill 契约分型
+
+Sub-skill 按其任务性质分为三种类型，使用不同的返回格式：
+
+| 类型 | 代表 | 返回格式 | 说明 |
+|------|------|---------|------|
+| **生成型** | extract-objects / logic / actions / rules, mock-data | DONE / DONE_WITH_CONCERNS / NEEDS_CONTEXT / BLOCKED | 生成新文件；4 状态码明确表示成功、疑虑、缺数据、卡点 |
+| **分析型** | flowchart-validate, semantic-check, coverage-check, rule-check | 结构化问题清单（JSON），空数组 = 无问题 | 分析已有文档；返回问题列表，Phase 负责逐条处置 |
+| **交互型** | interview | 对话自然结束，Phase 用文件存在性验证 | 与用户对话是本质需求；Phase 不检查状态码，改为检查输出文件是否已写入 |
+
+**Phase 文件的责任**：
+- **生成型**：检查返回状态码，DONE_WITH_CONCERNS 先处置疑虑再展示，BLOCKED/NEEDS_CONTEXT 不能静默跳过
+- **分析型**：检查 JSON 是否有效、是否为空，不为空时逐条处理问题
+- **交互型**：检查输出文件是否已写入，未写入时询问用户是重试还是回退
+
+**分析型契约详细格式**：
+
+```json
+{
+  "status": "ok" | "partial",
+  "issues": [
+    {"severity": "错误|警告|建议", "category": "...", "file": "...", "message": "..."}
+  ],
+  "confidence": 0.0-1.0
+}
+```
+
+Phase 文件读取 `issues` 数组：空 → 无问题通过；非空 → 逐条处理。
 
 ---
 

@@ -38,13 +38,13 @@ MODE: full
 **若 KEA 尚无 rule-check-agent.md**，改为运行 Python 工具层：
 
 ```bash
-cd {PROJECT_ROOT} && python3 -m kea validate \
-  --objects {OBJECTS_DIR} \
-  --logic {LOGIC_DIR} \
-  --actions {ACTIONS_DIR} \
-  --rules {RULES_DIR} \
-  --format json
+cd {PROJECT_ROOT} && python3 -m kea --format json validate {OBJECTS_DIR} && \
+python3 -m kea --format json validate {LOGIC_DIR} && \
+python3 -m kea --format json validate {ACTIONS_DIR} && \
+python3 -m kea --format json validate {RULES_DIR}
 ```
+
+从各次 JSON 输出中汇总 `errors`、`warnings`、`infos`。
 
 ### Step 3: 分类问题
 

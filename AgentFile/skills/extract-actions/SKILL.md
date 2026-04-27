@@ -95,74 +95,134 @@ For each unique action referenced in logic docs:
 
 **Skip if in EXISTING_FILES or not in 补充提取目标 (when set).**
 
-Write `ACTIONS_DIR/{动作名称}.md` with the following structure. **CRITICAL**: you MUST populate both the YAML front matter and the `relations` field.
+Write `ACTIONS_DIR/{动作名称}.md` following `action-template.md`. **CRITICAL**: populate `agent_context`, `inputs`/`outputs` in YAML front matter, proper `function` pseudo-code.
 
 ```markdown
 ---
 type: action
-domain: {业务领域，从所属逻辑的领域推断}
+id: {英文编码，如 deduct_inventory / send_notification}
+name: {中文名称}
+english_name: {PascalCaseEnglishName}
+domain: {业务领域}
 status: draft
 version: "1.0"
 tags: [kea-action]
-id: {英文编码，如 deduct_inventory / send_notification}
-name: {中文名称}
 aliases: [{别名1}]
+
+agent_context:
+  one_liner: "{一句话描述该动作的业务本质}"
+  typical_scenarios:
+    - "{业务场景1}"
+  common_misconceptions:
+    - "{常见误解1}"
+
 relations:
-  - {target: "所属逻辑", type: "part_of", description: "被哪个逻辑调用"}
-  - {target: "对象A", type: "uses", description: "读取的对象"}
-  - {target: "对象B", type: "modifies", description: "修改的对象"}
+  - target: {所属逻辑id}
+    type: part_of
+    description: "被{逻辑名称}调用"
+  - target: {对象id}
+    type: uses
+    description: "读取{对象名称}"
+  - target: {对象id}
+    type: modifies
+    description: "修改{对象名称}"
+
+inputs:
+  - name: {参数名}
+    type: {string|int|bool|float|date|enum|array|object}
+    required: {true|false}
+    description: "{参数描述}"
+
+outputs:
+  - name: {结果名}
+    type: {类型}
+    description: "{结果描述}"
 ---
 
-# 动作描述
-{2-4 sentences: what this action is, what triggers it, and what effect it has on business state}
-
 # 触发条件
-{在什么业务场景/逻辑节点下触发此动作}
+{什么情况下触发此动作，由哪个逻辑节点的哪个步骤调用}
 
-# 输入参数
-| 参数名称 | 类型 | 必填 | 描述 |
-| --- | --- | --- | --- |
-| 参数1 | 字符串 | 是 | 描述 |
-| 参数2 | 整型 | 否 | 描述 |
+## 前置条件
+1. {前置条件1}
+2. {前置条件2}
 
-# 输出结果
-| 结果字段 | 类型 | 描述 |
-| --- | --- | --- |
-| 结果1 | 布尔 | 是否成功 |
-| 结果2 | 字符串 | 错误信息/结果详情 |
+## 执行逻辑
 
-# 异常处理
-- {可能的异常情况1}：{处理方式}
-- {可能的异常情况2}：{处理方式}
+```pseudo
+function {函数名}(
+    {参数1}: {类型},
+    {参数2}: {类型}
+) -> {返回类型}:
+    
+    assert {条件}, "{错误信息}"
+    
+    // Step 1: {步骤描述}
+    {操作}
+    
+    // Step 2: {步骤描述}
+    if {条件}:
+        {操作}
+    else:
+        {操作}
+    
+    // Step 3: {步骤描述}
+    {结果} = {计算}
+    
+    return {
+        {结果字段}: {值}
+    }
+```
+
+## 后置条件
+1. {执行后必须满足的条件1}
+2. {执行后必须满足的条件2}
+
+## 回滚规则
+{如有副作用（修改数据、创建记录），描述如何回滚}
+
+```pseudo
+function rollback({参数}):
+    // {回滚操作}
+```
+
+## 边界条件
+
+| 场景 | 处理 |
+|------|------|
+| {异常场景1} | {处理方式} |
+| {异常场景2} | {处理方式} |
+
+## 异常处理
+- **{异常类型1}**: {触发条件} → {处理策略}
+- **{异常类型2}**: {触发条件} → {处理策略}
 ```
 
 ### Field Rules
 
 | Field | Rule |
 |-------|------|
-| `id` | English snake_case, e.g. `deduct_inventory`, `send_sms`. Used for code generation. |
-| `name` | Chinese action name, e.g. `扣减库存`, `发送通知`. Must match filename stem. |
-| `aliases` | Alternative names found in source docs. Empty list `[]` if none. |
-| `domain` | Inherit from the primary logic document that calls this action. If multiple logics from different domains call it, use the most common domain. |
-
-### Relations Rules
-
-- **YAML relations 必填**: Every action MUST declare:
-  - `part_of` → the primary logic that calls it
-  - `uses` → objects it reads from
-  - `modifies` → objects it writes to (if any)
-- Valid types for actions: `part_of`, `uses`, `modifies`, `triggers`
+| `id` | English snake_case，全局唯一 |
+| `name` | 中文动作名，与文件名 stem 一致 |
+| `agent_context` | **必填**。one_liner + typical_scenarios 至少 1 个 |
+| `relations` | 必须声明 `part_of`（调用方 logic）。类型：`part_of` / `uses` / `modifies` / `triggers` |
+| `inputs`/`outputs` | **YAML 中必填**，每个参数含 name/type/required/description |
+| 伪代码 | 使用 `function`/`assert`/`if-else` 格式 |
 
 ### Content Rules
 
-- **动作描述**: Explain what, why, and effect. Be specific — avoid generic descriptions like "处理数据". Instead: "根据订单明细扣减对应商品的可用库存数量，并记录库存变动日志".
-- **触发条件**: Describe the business scenario or logic node that triggers this action. E.g. "逻辑流执行到'检查库存'节点时触发" or "订单状态变更为'已支付'后异步触发".
-- **输入参数**: Use table format. Include type (字符串/整型/布尔/浮点/对象引用/枚举) and required flag (是/否).
-- **输出结果**: Use table format. At minimum include `是否成功` (bool) and `错误信息` (string).
-- **异常处理**: List specific exceptions with handling strategies. E.g.:
-  - 商品不存在：返回错误码 404，不修改库存
-  - 库存不足：返回错误码 409，提示可用库存数量
-  - 数据库超时：重试 3 次后返回错误码 503
+- **触发条件**: 具体到逻辑节点或步骤。e.g. "订单状态变更为'已支付'后触发"
+- **执行逻辑**: 完整 `pseudo` 代码块。包含 assert 前置检查、if-else 分支、return 结果
+- **前置/后置条件**: 从 Logic 文档的调用上下文提取。无信息标注"待补充"
+- **边界条件**: 每项含"场景→处理"映射
+- **异常处理**: 具体到异常类型和错误码，禁止泛泛的"处理异常"
+
+### Self-Validation: 每写完一个文件立即 kea parse
+
+```bash
+cd {KEA_TOOLS_ROOT} && python3 -m kea --format json parse {ACTIONS_DIR}/{动作名}.md
+```
+
+从 `~/.claude/skills/kea/config.md` 读取 `KEA_TOOLS_ROOT`。若 `"success": true` → 继续下一个。若解析失败 → 修复后重试直到通过。
 
 ## Step 3: Return structured result
 

@@ -133,7 +133,7 @@ flowchart TD
 ### 自动验证项
 
 ```bash
-python3 -m kea mermaid {DIAGRAMS_DIR}
+python3 -m kea --format json mermaid {DIAGRAMS_DIR}
 ```
 
 | 条件 | 通过标准 | 是否可绕过 |

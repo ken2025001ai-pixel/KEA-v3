@@ -8,6 +8,9 @@ build/
 # macOS
 .DS_Store
 
+# Playwright MCP
+.playwright-mcp/
+
 # IDE
 .idea/
 .vscode/

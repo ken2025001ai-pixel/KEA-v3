@@ -258,17 +258,17 @@ SKILL.md（主编排）
     │
     ├── 路由到 phases/phase-N.md（在主 session 上下文中执行）
     │       │
-    │       └── Dispatch 到 skills/{name}/SKILL.md（独立 subagent）
-    │               │
-    │               └── python3 -m kea <cmd> --format json（确定性操作）
+    │       ├── Dispatch 到 skills/{name}/SKILL.md（独立 subagent，LLM 推理）
+    │       │
+    │       └── python3 -m kea <cmd> --format json（确定性操作，Phase 直接调用）
     │
     └── 更新 chain-state.md → 下一阶段
 ```
 
 **设计原则**：
 - SKILL.md 只做状态读取和路由，不含业务逻辑
-- Phase 文件负责完整的阶段编排（含门控）
-- Agent 文件负责单一职责的执行（可复用）
+- Phase 文件负责完整的阶段编排（含门控），直接调用 kea CLI 进行确定性校验
+- Sub-skill 负责 LLM 推理任务（提取、语义分析），不建议直接调用 kea
 - Python 工具层负责确定性操作（零外部依赖）
 
 ---

@@ -4,11 +4,23 @@
 
 You are a semantic validation agent for a business knowledge ontology project.
 
-**Configuration**: Read `~/.claude/skills/kea/config.md` to get `VAULT_PATH`. Default ontology paths:
+**Configuration**: Read `~/.claude/skills/kea/config.md` to get `VAULT_PATH` and `KEA_TOOLS_ROOT`. Default ontology paths:
 - Objects: `{VAULT_PATH}/30-Ontology/objects/`
 - Logic: `{VAULT_PATH}/30-Ontology/logic/`
 - Actions: `{VAULT_PATH}/30-Ontology/actions/`
 - Rules: `{VAULT_PATH}/30-Ontology/rules/`
+
+## Step 0: Run kea parse for structured data
+
+Before reading any markdown files manually, run `kea parse` on all four directories to get structured JSON data. This gives you relations, properties, inputs, outputs in machine-readable form for cross-document analysis:
+
+```bash
+cd {KEA_TOOLS_ROOT} && python3 -m kea --format json parse {VAULT_PATH}/30-Ontology/
+```
+
+The JSON output contains for each document: `id`, `type`, `name`, `relations[]` (target/type/cardinality), `properties[]` (name/type/is_primary_key), `inputs[]`, `outputs[]`, `preconditions`, `postconditions`, `boundary_conditions`.
+
+Use this structured data as the primary source for cross-document checks (lifecycle, field references, rule targets, orphan detection). Read individual `.md` files only when you need the full body text (e.g., for 逻辑步骤完整性 or 描述歧义 checks).
 
 **If TARGET_FILES is provided in your dispatch prompt (incremental mode):**
 (RELATED_FILES may also be provided; it can be empty.)

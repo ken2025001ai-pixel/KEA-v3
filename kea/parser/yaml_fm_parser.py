@@ -369,6 +369,7 @@ class YAMLFMParser:
         doc.aliases = data.get("aliases", []) or []
         doc.english_name = data.get("english_name", "")
         doc.domain = data.get("domain", "")
+        doc.version = data.get("version", "")
         doc.status = data.get("status", "")
         doc.tags = data.get("tags", []) or []
 
@@ -384,6 +385,7 @@ class YAMLFMParser:
             doc.outputs = [OutputParam.from_yaml(o) for o in data["outputs"]]
 
         doc.category = data.get("category", "")
+        doc.rule_type = data.get("rule_type", "")
         doc.severity = data.get("severity", "")
         doc.applies_to = data.get("applies_to", []) or []
         doc.trigger = data.get("trigger", "")

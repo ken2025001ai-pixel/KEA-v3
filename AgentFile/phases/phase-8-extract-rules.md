@@ -85,15 +85,32 @@ SUMMARY_PATHS: {RESEARCH_REPORT_PATH}
 >
 > 审视完毕后回复"继续"进入自动校验。"
 
+### Step N: 运行 kea validate 结构校验（如有规则文档）
+
+若 `RULES_DIR` 下有 `.md` 文件：
+
+```bash
+cd {PROJECT_ROOT} && python3 -m kea --format json validate {RULES_DIR}
+```
+
+从 JSON 输出中提取：
+- `errors` — 结构错误数（条件 ③）
+- `reports[].issues[]` 中 category=`引用失效` 的 issue — 目标对象不存在（条件 ①）
+- `reports[].issues[]` 中 category=`字段不存在` 的 issue（条件 ②）
+
+若 `errors > 0`，展示错误明细，询问用户处置方式。
+
+**无规则文档时**：跳过本步骤。
+
 ## 门控评估（G8）
 
 ### 自动验证项（当存在规则文档时）
 
 | 条件 | 检查方式 | 通过标准 |
 |------|---------|---------|
-| ① constrains/guards 目标存在 | 提取每条规则 relations 中的目标，检查对应文件是否存在 | 不存在目标 = 0 |
-| ② 规则条件字段有效 | 对于 validation/derivation 规则，检查条件中引用的字段名是否存在于目标对象属性表（中文名称列） | 无效字段 = 0 |
-| ③ 结构错误 | 运行 rule-check-agent（仅 rules 范围） | 错误 = 0 |
+| ① constrains/guards 目标存在 | `kea validate` 输出中 category=`引用失效` 的 issue | 不存在目标 = 0 |
+| ② 规则条件字段有效 | `kea validate` 输出中 category=`字段不存在` 的 issue | 无效字段 = 0 |
+| ③ 结构错误 | `kea validate` 输出的 `errors` 字段 | 错误 = 0 |
 
 **无规则文档时**：条件 ①②③ 自动通过（N/A），仅需人类确认。
 

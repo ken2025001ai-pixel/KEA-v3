@@ -2,7 +2,7 @@
 
 ## 定位
 
-本体萃取技能链第 10 阶段，也是最终阶段。通过模拟执行真实业务场景，端到端验证已提取的 Ontology 能否正确支撑实际业务运转。**核心场景追踪无错误是投入使用的前提。**
+本体萃取技能链第 12 阶段，也是最终阶段。通过模拟执行真实业务场景，端到端验证已提取的 Ontology 能否正确支撑实际业务运转。**核心场景追踪无错误是投入使用的前提。**
 
 ## 输入参数
 
@@ -70,19 +70,13 @@ SCENARIOS: {用户确认的场景清单，含 core/extended 标注}
 
 等待完成，获取追踪结果。
 
-**若 KEA 尚无 scenario-trace-agent.md**，改为运行 Python 工具层：
+**若 KEA 尚无 scenario-trace-agent.md**，改为运行 Python 工具层（对每个场景，找到其主逻辑文件逐一追踪）：
 
 ```bash
-cd {PROJECT_ROOT} && python3 -m kea trace \
-  --objects {OBJECTS_DIR} \
-  --logic {LOGIC_DIR} \
-  --actions {ACTIONS_DIR} \
-  --rules {RULES_DIR} \
-  --scenario "{场景名}" \
-  --format json
+cd {PROJECT_ROOT} && python3 -m kea --format json trace {LOGIC_DIR}/{场景主逻辑文件名}.md
 ```
 
-每个场景逐一追踪，汇总结果。
+kea trace 接收单个 logic 文件路径，执行其伪代码并输出执行轨迹。若需传入场景数据，使用 `--scenarios {场景JSON文件}` 参数。每个核心场景逐一追踪，汇总结果。
 
 ### Step 5: 展示追踪结果仪表盘
 
@@ -230,6 +224,6 @@ Ontology 文档已就绪，可开始：
 | 规则条件导致场景阻断 | Phase 8（规则，当前） | 修正规则条件 |
 | 补充提取后重新发现语义/结构问题 | Phase 9 → 10 → 11 → 12 | 走快速通道 |
 
-回退后重走 Phase 7→8→9→10（快速通道：若补充文档子集通过 rule-check + semantic-check，可直接重跑 Phase 11→12）。
+回退后从修复的 Phase 开始，依次经过后续校验阶段（快速通道：若补充文档子集通过 rule-check + semantic-check，可直接重跑 Phase 11→12）。
 
 在 chain-state.md 追加回退记录。

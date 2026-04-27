@@ -41,7 +41,19 @@ DOMAIN_EN: {DOMAIN_EN}
 
 interview-agent 将执行以下状态：`GREETING → DOMAIN_DISCOVERY → OBJECT_INTERVIEW → OBJECT_CONFIRM → LOGIC_INTERVIEW → LOGIC_CONFIRM → ACTION_INTERVIEW → ACTION_CONFIRM → RULE_INTERVIEW → RULE_CONFIRM → SUMMARY`
 
-**注意**：interview-agent 在 SUMMARY 状态用户选择【保存并生成索引】时，除写入 Ontology 文档外，还会将访谈摘要写入 Vault。
+**注意**：interview-agent 在 SUMMARY 状态用户选择【保存并生成索引】时，除写入 Ontology 文档外，还会将访谈摘要写入 Vault。interview-agent 属于交互型 sub-skill，允许与用户对话，Phase 2 等待其自然完成后进入下一步。
+
+### Step 2.5: 验证访谈输出
+
+检查访谈摘要文件是否已写入：
+`{VAULT_PATH}/RAWData/KEAOutput/interviews/{YYYY-MM-DD}-{DOMAIN_EN}-summary.md`
+
+- **文件存在** → 进入 Step 3
+- **文件不存在** → 访谈可能被中断或未完成：
+  > "未找到访谈摘要文件。访谈是否被中断？
+  > - ✅ 重新开始访谈
+  > - 🔄 从中断处继续
+  > - ❌ 取消（回退到 Phase 1 重新调研）"
 
 ### Step 3: 获取访谈摘要路径
 

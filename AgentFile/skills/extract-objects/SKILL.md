@@ -93,65 +93,97 @@ Read `~/.claude/skills/kea/templates/object-template.md` to understand the requi
 
 For each candidate object, **skip if in EXISTING_FILES** or **skip if not in 补充提取目标** (when set).
 
-Write `OBJECTS_DIR/{名称}.md` with the following structure. **CRITICAL**: you MUST populate both the YAML front matter and the `relations` field.
+Write `OBJECTS_DIR/{名称}.md` following `object-template.md`. **CRITICAL**: you MUST populate the YAML front matter, `agent_context`, `relations` with `cardinality`, and full property table with `约束` column.
 
 ```markdown
 ---
 type: object
-domain: {业务领域，从调研报告或流程图上下文推断}
-status: draft
-version: "1.0"
-tags: [kea-object]
 id: {英文编码，如 sales_order / user / inventory}
 name: {中文名称}
 english_name: {EnglishName，PascalCase}
+domain: {业务领域}
+status: draft
+version: "1.0"
+tags: [kea-object]
 aliases: [{别名1}, {别名2}]
+
+agent_context:
+  one_liner: "{一句话描述该对象的业务本质}"
+  typical_scenarios:
+    - "{业务场景1}"
+  common_misconceptions:
+    - "{常见误解1}"
+
 relations:
-  - {target: "关联对象B", type: "contains", description: "包含关系说明"}
-  - {target: "关联对象A", type: "belongs_to", description: "归属关系说明"}
+  - target: {target_id}
+    type: {contains|belongs_to|has|references}
+    cardinality: "{1:1|1:N|N:1|N:M}"
+    description: "{关系描述}"
 ---
 
 # 对象描述
 {业务含义，2-3句话，说明这是什么、在业务中起什么作用}
 
-# 对象别名
+## 对象别名
 {常用同义词别名，逗号分隔，如果没有填'无'}
 
-# 英文名称
-{English name in PascalCase}
+## 属性清单
+| 名称 | 英文名 | 描述 | 主键 | 类型 | 约束 |
+| --- | --- | --- | --- | --- | --- |
+| 编码 | code | 唯一标识 | 是 | 字符串 | unique, required |
+| 名称 | name | 对象名称 | 否 | 字符串 | required |
+| 状态 | status | 当前状态 | 否 | 枚举 | values: [草稿, 激活, 归档] |
 
-# 对象属性清单
-| 中文名称 | 英文名称 | 描述 | 主键 | 类型 |
-| --- | --- | --- | --- | --- |
-| {至少包含编码/名称/状态等核心属性} |
+## 状态机
+（如果对象有状态流转，添加 mermaid stateDiagram-v2 图。无则省略此节。）
 
-# 关联对象
-- {当前对象名} -> {关系名} -> [[对象B]]
-- [[对象A]] -> {关系名} -> {当前对象名}
+```mermaid
+stateDiagram-v2
+    [*] --> {状态1}: {触发条件}
+    {状态1} --> {状态2}: {触发条件}
+```
+
+## 状态转换规则
+（如果对象有状态流转，列出转换规则。无则省略此节。）
+
+| 转换 | 触发条件 | 前置条件 | 执行动作 |
+|------|---------|---------|---------|
+| {状态A} → {状态B} | {触发条件} | {前置条件} | {执行动作} |
+
+## 业务规则
+（对象级别的业务约束。无则填"无"。）
+
+- **R-{DOMAIN}-{001}**: {规则描述}
+
+## 关联对象
+- 当前对象 contains → [[{对象名称}]]
+- 当前对象 belongs_to → [[{对象名称}]]
+- [[{对象A}]] has → 当前对象
 ```
 
 ### Field Rules
 
 | Field | Rule |
 |-------|------|
-| `id` | English snake_case identifier, e.g. `sales_order`, `purchase_request`. Used for code generation and cross-reference. |
-| `name` | Chinese business name, e.g. `订单`, `用户`. Must match the filename stem. |
-| `english_name` | PascalCase English name, e.g. `SalesOrder`, `User`. Used for code generation. |
-| `aliases` | Common synonyms found in source documents. Include at least the most frequently used alternative names. If none, use `[]`. |
-| `domain` | Infer from research report section headers or flowchart context. If unclear, use the most specific domain mentioned. |
+| `id` | English snake_case，全局唯一。用于代码生成和交叉引用 |
+| `name` | 中文名称，与文件名 stem 一致（不含 .md） |
+| `english_name` | PascalCase，用于代码生成 |
+| `agent_context` | **必填**。one_liner 至少一句话，typical_scenarios 至少 1 个场景 |
+| `relations` | 每个 relation 必须填写 `cardinality`。类型：`contains`/`belongs_to`/`has`/`references` |
+| 属性表 | 必须有主键（`主键=是`）。包含 `约束` 列。类型：字符串/数字/布尔/枚举/日期/对象引用 |
 
-### Relations Rules
+### Self-Validation: 每写完一个文件立即 kea parse
 
-- **YAML relations 必填**: Extract structured relationships from the "关联对象" section and write to `relations`. Every linked object MUST have a corresponding relation entry.
-- Valid relation types for objects: `contains`, `belongs_to`, `has`, `references`
-- If no relationships exist, omit both the "关联对象" section and the `relations` field
+写入文件后，运行以下命令确认格式正确、解析器可正常解析：
 
-### Property Rules
+```bash
+cd {KEA_TOOLS_ROOT} && python3 -m kea --format json parse {OBJECTS_DIR}/{名称}.md
+```
 
-- Always include a primary key (`主键=是`)
-- Types: 字符串 / 数字 / 布尔 / 枚举 / 日期 / 对象引用
-- Include at minimum: 编码(ID), 名称, 状态 — these are core attributes for any business object
-- For 枚举 types, list possible values in the description column
+从 `~/.claude/skills/kea/config.md` 读取 `KEA_TOOLS_ROOT`。
+
+- 若 `"success": true` → 继续下一个
+- 若解析失败 → 检查 YAML front matter 和表格格式，修正后重试 parse，直到通过
 
 ## Step 3: Return structured result
 

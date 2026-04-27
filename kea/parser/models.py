@@ -146,6 +146,7 @@ class KnowledgeDocument:
     aliases: list[str] = field(default_factory=list)
     english_name: str = ""
     domain: str = ""           # 所属业务领域
+    version: str = ""          # 文档版本号
     status: str = ""           # draft | validated | approved
     tags: list[str] = field(default_factory=list)
     agent_context: AgentContext | None = None
@@ -154,6 +155,7 @@ class KnowledgeDocument:
     outputs: list[OutputParam] = field(default_factory=list)
     # Rule 特有
     category: str = ""         # 规则分类: 状态机约束/数据一致性/计算公式/权限控制
+    rule_type: str = ""        # 规则子类型: validation/guard/derivation/policy
     severity: str = ""         # critical/high/medium/low
     applies_to: list[dict] = field(default_factory=list)
     trigger: str = ""
@@ -177,6 +179,7 @@ class KnowledgeDocument:
     # 代码块
     pseudocode: str = ""               # ```pseudo 内容
     mermaid_diagram: str = ""          # ```mermaid 内容
+    wikilinks: list[str] = field(default_factory=list)  # body 中的 [[链接]] 目标列表
 
     # === 文件元数据 ===
     file_path: str = ""

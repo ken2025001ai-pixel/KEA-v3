@@ -65,6 +65,7 @@ class Relationship:
     source: str = ""
     target: str = ""
     rel_type: str = ""
+    cardinality: str = ""
     context: str = ""
 
     def to_dict(self) -> dict[str, Any]:
@@ -72,6 +73,7 @@ class Relationship:
             "source": self.source,
             "target": self.target,
             "type": self.rel_type,
+            "cardinality": self.cardinality,
             "context": self.context,
         }
 
@@ -247,6 +249,7 @@ class OntologyIndexer:
                                 source=idx_doc.rel_path,
                                 target=target_doc.rel_path,
                                 rel_type=rel.type or "link",
+                                cardinality=rel.cardinality or "",
                                 context=f"yaml_relation:{rel.description or ''}",
                             ))
             except Exception:
@@ -258,7 +261,26 @@ class OntologyIndexer:
             covered.add((r.source, r.target))
             self.relationships.append(r)
 
-        # 其次：Dataview inline fields
+        # 其次：Rule applies_to（转换为 constrains 关系）
+        for doc in self.documents:
+            raw_doc = self._parse_doc(doc.abs_path)
+            if raw_doc and raw_doc.applies_to:
+                for item in raw_doc.applies_to:
+                    obj_id = item.get("object", "")
+                    if obj_id:
+                        target_doc = self._resolve_link(obj_id)
+                        if target_doc and target_doc.rel_path != doc.rel_path:
+                            key = (doc.rel_path, target_doc.rel_path)
+                            if key not in covered:
+                                covered.add(key)
+                                self.relationships.append(Relationship(
+                                    source=doc.rel_path,
+                                    target=target_doc.rel_path,
+                                    rel_type="constrains",
+                                    context=f"applies_to:field={item.get('field', '')}",
+                                ))
+
+        # 再次：Dataview inline fields
         for doc in self.documents:
             for field_name, targets in doc.inline_fields.items():
                 for target_name in targets:

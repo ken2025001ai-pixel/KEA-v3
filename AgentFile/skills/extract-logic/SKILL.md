@@ -105,38 +105,58 @@ Each flowchart generally corresponds to one logic document. For each:
 
 **Skip if in EXISTING_FILES or not in 补充提取目标 (when set).**
 
-Write `LOGIC_DIR/{流程名称}.md` with the following structure. **CRITICAL**: you MUST populate both the YAML front matter and the `relations` field.
+Write `LOGIC_DIR/{流程名称}.md` following `logic-template.md`. **CRITICAL**: populate `agent_context`, `inputs`/`outputs` in YAML front matter, proper pseudo-code with `assert`/`if`/`call_action`.
 
 ```markdown
 ---
 type: logic
-domain: {业务领域，从调研报告或流程图上下文推断}
+id: {英文编码，如 create_order / approve_purchase}
+name: {中文名称}
+english_name: {PascalCaseEnglishName}
+domain: {业务领域}
 status: draft
 version: "1.0"
 tags: [kea-logic]
-id: {英文编码，如 create_order / approve_purchase}
-name: {中文名称}
 aliases: [{别名1}]
+
+agent_context:
+  one_liner: "{一句话描述该逻辑的业务本质}"
+  typical_scenarios:
+    - "{业务场景1}"
+  common_misconceptions:
+    - "{常见误解1}"
+
 relations:
-  - {target: "对象A", type: "uses", description: "输入数据说明"}
-  - {target: "对象B", type: "produces", description: "输出数据说明"}
-  - {target: "动作A", type: "calls", description: "触发执行说明"}
-  - {target: "流程A", type: "precedes", description: "前置流程说明"}
+  - target: {对象或动作id}
+    type: {uses|produces|supports|calls|precedes|follows|part_of}
+    cardinality: "{1:1|1:N|N:1|N:M}"
+    description: "{关系描述}"
+
+inputs:
+  - name: {参数名}
+    type: {string|int|bool|array|object}
+    required: {true|false}
+    description: "{参数描述}"
+
+outputs:
+  - name: {结果名}
+    type: {类型}
+    description: "{结果描述}"
 ---
 
 # 业务描述
-{该流程的用途、触发条件和业务价值，2-4句话}
+{该流程的业务目的、范围和重要性}
 
-# 与流程(logic)的关联
+## 与流程(logic)的关联
 - 被流程使用 > [[主流程名]]，如果没有填'无'
 - 使用流程 > [[子流程名]]，如果没有填'无'
 
-# 与对象(object)的关联
+## 与对象(object)的关联
 - 输入数据的对象：[[对象1]]、[[对象2]]
 - 输出数据的对象：[[对象1]]
 - 支撑数据的对象：[[对象1]]
 
-# 与动作(action)的关联
+## 与动作(action)的关联
 | 动作名称 | 触发条件 | 执行顺序 |
 | --- | --- | --- |
 | [[动作1]] | 条件1 | 1 |
@@ -144,56 +164,82 @@ relations:
 
 *如果没有动作填'无'*
 
-# 输入
-| 参数名称 | 类型 | 描述 |
-| --- | --- | --- |
-| 参数1 | 类型 | 描述 |
+## 前提
+1. {前置条件1}
+2. {前置条件2}
 
-*如果没有填'无'*
+## 效果
+1. {执行后的业务效果1}
+2. {执行后的业务效果2}
 
-# 输出
-| 参数名称 | 类型 | 描述 |
-| --- | --- | --- |
-| 参数1 | 类型 | 描述 |
+## 逻辑描述
 
-*如果没有填'无'*
-
-# 逻辑描述
+```pseudo
+function {函数名}(
+    {参数1}: {类型},
+    {参数2}: {类型}
+) -> {返回类型}:
+    
+    // ========== Step 1: {步骤描述} ==========
+    {变量} = {操作}
+    assert {条件}, "{错误信息}"
+    
+    // ========== Step 2: {步骤描述} ==========
+    for {item} in {集合}:
+        {操作}
+    
+    // ========== Step N: {决策分支} ==========
+    if {条件}:
+        {操作}
+    else:
+        {操作}
+    
+    // ========== Step N+1: {子流程调用} ==========
+    {结果} = call_action("{动作名称}", {{参数: 值}})
+    
+    return {
+        {结果字段}: {值}
+    }
 ```
-1. 逻辑步骤，引用对象用 [[对象名称]]
-2. 判断节点用 ？ 结尾
-   - 若 条件1: 动作
-   - 若 条件2: 动作
-3. 调用子流程：调用[[子流程名称]]逻辑文档
-4. 返回结果
+
+## 边界条件
+
+| 场景 | 处理 |
+|------|------|
+| {异常场景1} | {处理方式} |
+| {异常场景2} | {处理方式} |
+
+## 回滚规则
+
+```pseudo
+function rollback({上下文参数}):
+    // {回滚操作描述}
 ```
+
+## 关联对象与调用
+
+- 使用 → [[{对象名称}]]
+- 调用 → Action: [[{动作名称}]]
 ```
 
 ### Field Rules
 
 | Field | Rule |
 |-------|------|
-| `id` | English snake_case, e.g. `create_order`, `approve_request`. Used for code generation. |
-| `name` | Chinese process name, e.g. `创建订单`, `审批采购`. Must match filename stem. |
-| `aliases` | Alternative names found in source docs. Empty list `[]` if none. |
-| `domain` | Infer from research report or flowchart context. |
+| `id` | English snake_case，全局唯一 |
+| `name` | 中文流程名，与文件名 stem 一致 |
+| `agent_context` | **必填**。one_liner + typical_scenarios 至少 1 个 |
+| `relations` | 必须填写 `cardinality`。类型：`uses`/`produces`/`supports`/`calls`/`precedes`/`follows`/`part_of` |
+| `inputs`/`outputs` | **YAML 中必填**，每个参数含 name/type/required/description |
+| 伪代码 | 使用 `function`/`assert`/`if-else`/`call_action` 格式，每步注释标注 Step N |
 
-### Relations Rules
+### Self-Validation: 每写完一个文件立即 kea parse
 
-- **YAML relations 必填**: Extract structured relationships from body sections:
-  - "与对象关联" → `uses` (input), `produces` (output), `supports` (supporting data)
-  - "与动作关联" → `calls` (direct invocation)
-  - "与流程关联" → `precedes` / `follows` (sequential)
-- Every referenced document MUST have a corresponding relation entry
-- Valid types: `uses`, `produces`, `supports`, `calls`, `triggers`, `precedes`, `follows`, `part_of`
+```bash
+cd {KEA_TOOLS_ROOT} && python3 -m kea --format json parse {LOGIC_DIR}/{流程名}.md
+```
 
-### Body Section Rules
-
-- **与流程(logic)的关联**: List parent/child logic docs. Sub-logic calls in 逻辑描述 MUST appear here.
-- **与对象(object)的关联**: Categorize objects as input/output/support. Only link to objects in OBJECTS_DIR.
-- **与动作(action)的关联**: List concrete actions this logic triggers. These will be extracted as action docs in the next phase.
-- **逻辑描述**: Translate flowchart into numbered steps at **attribute-level granularity** (each step references object properties, not just object names). Mark `TODO: 需补充逻辑步骤` if detail insufficient.
-- **输入/输出**: Use table format with type column (字符串/整型/布尔/对象引用/枚举).
+从 `~/.claude/skills/kea/config.md` 读取 `KEA_TOOLS_ROOT`。若 `"success": true` → 继续下一个。若解析失败 → 修复后重试直到通过。
 
 ## Step 3: Return structured result
 
