@@ -62,7 +62,7 @@ DOMAIN_EN: {DOMAIN_EN}
 未发现明显问题，报告质量良好。
 ```
 
-跳至 Step 5（G2 门控）。
+跳至门控评估（G2）。
 
 若 `issues` 非空，逐条展示，每条等待专家回复后再展示下一条：
 
@@ -93,7 +93,7 @@ DOMAIN_EN: {DOMAIN_EN}
 
 ### Step 4: 判断是否需要定向补充
 
-若 `CONFIRMED_GAPS` 为空：告知用户"所有问题已处置，无需补充访谈"，直接进入 Step 6（G2 门控）。
+若 `CONFIRMED_GAPS` 为空：告知用户"所有问题已处置，无需补充访谈"，直接进入门控评估（G2）。
 
 若 `CONFIRMED_GAPS` 非空：
 
