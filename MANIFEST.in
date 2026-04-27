@@ -1,0 +1,3 @@
+# Exclude test files from package distribution
+exclude tests/
+recursive-exclude tests *

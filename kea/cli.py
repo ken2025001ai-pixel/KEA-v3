@@ -21,6 +21,7 @@ from kea.parser.document_parser import DocumentParser
 from kea.parser.mermaid_parser import parse_file as parse_mermaid_file
 from kea.tracer.pseudocode_executor import ExecutionTrace, PseudocodeExecutor
 from kea.tracer.scenario_generator import Scenario, generate_scenarios
+from kea.linter import AgentFileLinter
 from kea.validator.contract_validator import ContractValidator
 from kea.validator.rule_validator import RuleValidator
 from kea.validator.state_validator import StateValidator
@@ -616,6 +617,34 @@ def cmd_ingest(args: argparse.Namespace) -> int:
 
 
 # ---------------------------------------------------------------------------
+# lint
+# ---------------------------------------------------------------------------
+
+def cmd_lint(args: argparse.Namespace) -> int:
+    """AgentFile 编排层结构校验."""
+    linter = AgentFileLinter()
+    report = linter.lint_directory(args.target)
+
+    if args.format == "json":
+        _json_out({"command": "lint", "success": report.error_count() == 0, **report.to_dict()})
+    else:
+        total = len(report.issues)
+        errors = report.error_count()
+        warnings = report.warning_count()
+        print(f"\n{'='*60}")
+        print(f"📋 AgentFile Lint 报告")
+        print(f"{'='*60}")
+        print(f"问题总数: {total} (🔴 {errors} / 🟡 {warnings})")
+        print(f"{'='*60}\n")
+        for issue in report.issues:
+            icon = "🔴" if issue.severity == "error" else "🟡"
+            print(f"{icon} {issue.file}:{issue.line} — {issue.message}")
+        print()
+
+    return 1 if report.error_count() > 0 else 0
+
+
+# ---------------------------------------------------------------------------
 # main
 # ---------------------------------------------------------------------------
 
@@ -706,6 +735,11 @@ def main() -> int:
     ingest_parser.add_argument("--domain-cn", default="", help="领域中文名（可选）")
     ingest_parser.add_argument("--output-dir", required=True, help="输出目录（sources/{domain}/）")
     ingest_parser.set_defaults(func=cmd_ingest)
+
+    # lint
+    lint_parser = subparsers.add_parser("lint", help="AgentFile 编排层结构校验")
+    lint_parser.add_argument("target", help="AgentFile 目录路径")
+    lint_parser.set_defaults(func=cmd_lint)
 
     args = parser.parse_args()
 
