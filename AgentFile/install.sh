@@ -115,9 +115,9 @@ fi
 ok "KEA CLI verified"
 
 # Run unit tests if tests/ directory exists and has test files
-TESTS_DIR="${KEA_TOOLS_DIR}/tests"
+TESTS_DIR="${PROJECT_ROOT}/tests"
 if [ -d "${TESTS_DIR}" ] && [ -n "$(find "${TESTS_DIR}" -name 'test_*.py' 2>/dev/null)" ]; then
-    if (cd "${PROJECT_ROOT}" && ${PYTHON_CMD} -m pytest kea/tests/ -q >/tmp/kea-test.log 2>&1); then
+    if (cd "${PROJECT_ROOT}" && ${PYTHON_CMD} -m pytest tests/ -q >/tmp/kea-test.log 2>&1); then
         TEST_COUNT=$(grep -oE '[0-9]+ passed' /tmp/kea-test.log | awk '{print $1}' | head -1)
         ok "All ${TEST_COUNT} tests passed"
     else
@@ -126,6 +126,14 @@ if [ -d "${TESTS_DIR}" ] && [ -n "$(find "${TESTS_DIR}" -name 'test_*.py' 2>/dev
     fi
 else
     ok "No unit tests found — skipping"
+fi
+
+# Run AgentFile lint
+if (cd "${PROJECT_ROOT}" && ${PYTHON_CMD} -m kea lint "${SCRIPT_DIR}" >/tmp/kea-lint.log 2>&1); then
+    ok "AgentFile lint: 0 errors"
+else
+    warn "AgentFile lint found issues. Check /tmp/kea-lint.log"
+    tail -5 /tmp/kea-lint.log >&2
 fi
 
 # ---------------------------------------------------------------------------

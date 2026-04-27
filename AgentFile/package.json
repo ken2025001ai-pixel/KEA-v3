@@ -1,15 +1,16 @@
 {
-  "name": "kea-openclaw",
-  "version": "3.0.0",
-  "description": "KEA (Knowledge Extraction Agent) for OpenClaw — Business knowledge extraction and ontology modeling",
+  "name": "kea",
+  "version": "4.0.0",
+  "description": "KEA (Knowledge Extraction Agent) — 12-phase skill chain for business ontology modeling",
   "main": "SKILL.md",
   "scripts": {
-    "postinstall": "node scripts/install.js",
-    "test": "cd ../kea && python3 -m unittest discover -v tests/"
+    "test": "cd .. && python3 -m pytest tests/ -q",
+    "lint": "cd .. && python3 -m kea lint AgentFile/",
+    "check": "npm run lint && npm test"
   },
   "keywords": [
-    "openclaw",
-    "openclaw-skill",
+    "claude-code",
+    "claude-code-skill",
     "ontology",
     "knowledge-extraction",
     "business-process",
@@ -20,19 +21,13 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-org/kea.git",
-    "directory": "openclaw"
+    "url": "https://github.com/ken2025001ai-pixel/KEA-v3.git"
   },
   "bugs": {
-    "url": "https://github.com/your-org/kea/issues"
+    "url": "https://github.com/ken2025001ai-pixel/KEA-v3/issues"
   },
-  "homepage": "https://github.com/your-org/kea/tree/main/openclaw#readme",
+  "homepage": "https://github.com/ken2025001ai-pixel/KEA-v3#readme",
   "engines": {
     "node": ">=22.0.0"
-  },
-  "openclaw": {
-    "skill": true,
-    "minVersion": "0.1.0",
-    "category": "productivity"
   }
 }
