@@ -56,6 +56,73 @@ KEA_TOOLS_ROOT  = ~/.claude/skills/kea/config.md 中 "KEA_TOOLS_ROOT:" 的值
 PROJECT_ROOT    = KEA_TOOLS_ROOT（传给 phase 文件，用于 cd {PROJECT_ROOT} && python3 -m kea）
 ```
 
+### Step 1.5: 检查并安装 Obsidian 插件
+
+KEA 审视工作流依赖以下 5 个插件。每次触发时检查是否已安装，缺失则自动下载。
+
+| Plugin ID | GitHub 仓库 | 用途 |
+|-----------|-------------|------|
+| `obsidian-hover-editor` | `nothingislost/obsidian-hover-editor` | 悬停预览 `[[链接]]`，审视时不跳离当前文件 |
+| `code-styler` | `mayurankv/Obsidian-Code-Styler` | `pseudo` 代码块语法高亮（逻辑/动作文件可读性） |
+| `dataview` | `blacksmithgu/obsidian-dataview` | 基于 YAML front matter 的动态审计查询 |
+| `obsidian-mermaid-links` | `vinayaugustine/obsidian-mermaid-links` | 流程图节点一键跳转 Mermaid Live Editor |
+| `breadcrumbs` | `SkepticMystic/breadcrumbs` | 语义关系矩阵视图（Matrix/Tree） |
+
+执行以下脚本检查并安装：
+
+```bash
+bash -c '
+VAULT_PATH="{VAULT_PATH}"
+PLUGIN_DIR="$VAULT_PATH/.obsidian/plugins"
+ENABLED_JSON="$VAULT_PATH/.obsidian/community-plugins.json"
+INSTALLED=0
+
+mkdir -p "$PLUGIN_DIR"
+[ ! -f "$ENABLED_JSON" ] && echo "[]" > "$ENABLED_JSON"
+
+install_plugin() {
+  local id=$1 repo=$2
+  if [ -f "$PLUGIN_DIR/$id/manifest.json" ]; then return 0; fi
+  mkdir -p "$PLUGIN_DIR/$id"
+  if curl -sL --fail "https://github.com/$repo/releases/latest/download/main.js" \
+       -o "$PLUGIN_DIR/$id/main.js" 2>/dev/null && \
+     curl -sL --fail "https://github.com/$repo/releases/latest/download/manifest.json" \
+       -o "$PLUGIN_DIR/$id/manifest.json" 2>/dev/null; then
+    curl -sL --fail "https://github.com/$repo/releases/latest/download/styles.css" \
+      -o "$PLUGIN_DIR/$id/styles.css" 2>/dev/null || true
+    echo "  ✅ 已安装：$id"
+    INSTALLED=$((INSTALLED+1))
+  else
+    rm -rf "$PLUGIN_DIR/$id"
+    echo "  ❌ 安装失败：$id（请手动安装：https://github.com/$repo/releases）"
+  fi
+}
+
+enable_plugin() {
+  python3 -c "
+import json
+with open(\"$ENABLED_JSON\") as f: p = json.load(f)
+if \"$1\" not in p: p.append(\"$1\")
+with open(\"$ENABLED_JSON\", \"w\") as f: json.dump(p, f)
+"
+}
+
+install_plugin "obsidian-hover-editor"  "nothingislost/obsidian-hover-editor"  && enable_plugin "obsidian-hover-editor"
+install_plugin "code-styler"            "mayurankv/Obsidian-Code-Styler"        && enable_plugin "code-styler"
+install_plugin "dataview"               "blacksmithgu/obsidian-dataview"        && enable_plugin "dataview"
+install_plugin "obsidian-mermaid-links" "vinayaugustine/obsidian-mermaid-links" && enable_plugin "obsidian-mermaid-links"
+install_plugin "breadcrumbs"            "SkepticMystic/breadcrumbs"             && enable_plugin "breadcrumbs"
+
+if [ "$INSTALLED" -gt 0 ]; then
+  echo ""
+  echo "⚠️  新安装了 $INSTALLED 个插件，请在 Obsidian 中执行："
+  echo "   Settings → Community plugins → 点击「重载插件」使其生效。"
+fi
+'
+```
+
+若 Vault 目录不存在则跳过本步骤（Vault 将在 Step 3 初始化后生效）。
+
 ### Step 2: 确定领域
 
 若用户未指定领域，询问：
@@ -292,8 +359,13 @@ Ontology 节点类型与颜色映射：
 
 ## 推荐 Obsidian 插件
 
-| 插件 | 用途 |
-|------|------|
-| **obsidian-mermaid-links** | Mermaid 图表一键跳转 Live Editor |
-| **Dataview** | 基于 YAML front matter 的动态查询和统计面板 |
-| **Breadcrumbs** | 语义关系网络可视化（Matrix/Tree 视图） |
+以下插件由 Step 1.5 自动检查并安装。
+
+| 插件 | Plugin ID | 用途 | 市场 |
+|------|-----------|------|------|
+| **Hover Editor** | `obsidian-hover-editor` | 悬停预览 `[[链接]]`，审视时不跳离当前文件 | ✅ 社区市场 |
+| **Code Styler** | `code-styler` | `pseudo` 代码块高亮（Phase 6/7 逻辑/动作文件可读性）。安装后在 Code Styler 设置中将 `pseudo` 映射为 Python 高亮。 | ✅ 社区市场 |
+| **Dataview** | `dataview` | 基于 YAML front matter 的动态审计查询（如"哪些对象缺少主键"） | ✅ 社区市场 |
+| **Mermaid Links** | `obsidian-mermaid-links` | 流程图节点一键跳转 Mermaid Live Editor（Phase 3/4 审视） | ⚠️ 非市场，GitHub 安装 |
+| **Breadcrumbs** | `breadcrumbs` | 语义关系矩阵视图（Matrix/Tree），需配合 `relations` 字段使用 | ✅ 社区市场 |
+
