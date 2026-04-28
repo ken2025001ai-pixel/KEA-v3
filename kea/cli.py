@@ -617,6 +617,77 @@ def cmd_ingest(args: argparse.Namespace) -> int:
 
 
 # ---------------------------------------------------------------------------
+# flowchart-check
+# ---------------------------------------------------------------------------
+
+def cmd_flowchart_check(args: argparse.Namespace) -> int:
+    """Mermaid 流程图 S1-S4 结构校验."""
+    from kea.parser.mermaid_parser import parse_file as _parse_fc
+    from kea.validator.flowchart_checker import FlowchartChecker
+
+    target = Path(args.target)
+    checker = FlowchartChecker()
+
+    if target.is_dir():
+        files = sorted(target.glob("*.md"))
+    elif target.is_file():
+        files = [target]
+    else:
+        if args.format == "json":
+            _json_out({"error": f"目标不存在：{target}"})
+        else:
+            print(f"错误：目标不存在：{target}", file=sys.stderr)
+        return 1
+
+    results: list[dict] = []
+    total_passed = 0
+    total_failed = 0
+
+    for f in files:
+        try:
+            chart = _parse_fc(str(f))
+        except Exception as e:
+            results.append({
+                "file": f.name,
+                "passed": False,
+                "issues": [{"check": "PARSE", "node_id": "", "node_label": "", "message": f"解析失败：{e}"}],
+            })
+            total_failed += 1
+            continue
+
+        issues = checker.check(chart)
+        passed = len(issues) == 0
+        if passed:
+            total_passed += 1
+        else:
+            total_failed += 1
+        results.append({
+            "file": f.name,
+            "passed": passed,
+            "issues": [
+                {"check": i.check, "node_id": i.node_id, "node_label": i.node_label, "message": i.message}
+                for i in issues
+            ],
+        })
+
+    summary = {"total": len(files), "passed": total_passed, "failed": total_failed}
+
+    if args.format == "json":
+        _json_out({"command": "flowchart-check", "summary": summary, "results": results})
+    else:
+        print(f"\n流程图结构校验（S1-S4）")
+        print(f"总计：{len(files)} 个，通过：{total_passed}，失败：{total_failed}\n")
+        for r in results:
+            icon = "✅" if r["passed"] else "❌"
+            print(f"  {icon} {r['file']}")
+            for issue in r["issues"]:
+                print(f"       [{issue['check']}] {issue['message']}")
+        print()
+
+    return 0 if total_failed == 0 else 1
+
+
+# ---------------------------------------------------------------------------
 # lint
 # ---------------------------------------------------------------------------
 
@@ -735,6 +806,11 @@ def main() -> int:
     ingest_parser.add_argument("--domain-cn", default="", help="领域中文名（可选）")
     ingest_parser.add_argument("--output-dir", required=True, help="输出目录（sources/{domain}/）")
     ingest_parser.set_defaults(func=cmd_ingest)
+
+    # flowchart-check
+    fc_check_parser = subparsers.add_parser("flowchart-check", help="Mermaid 流程图 S1-S4 结构校验")
+    fc_check_parser.add_argument("target", help="目标 .md 文件或目录")
+    fc_check_parser.set_defaults(func=cmd_flowchart_check)
 
     # lint
     lint_parser = subparsers.add_parser("lint", help="AgentFile 编排层结构校验")
