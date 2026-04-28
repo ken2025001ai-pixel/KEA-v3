@@ -85,75 +85,21 @@ PROJECT_ROOT    = KEA_TOOLS_ROOT（传给 phase 文件，用于 cd {PROJECT_ROOT
 
 ### Step 1.6: 检查并安装 Obsidian 插件
 
-KEA 审视工作流依赖以下 5 个插件。每次触发时检查安装状态，缺失则自动下载并启用。
+检查以下 5 个插件是否已安装于 `{VAULT_PATH}/.obsidian/plugins/`。如有缺失，自行完成安装并启用。
 
-| Plugin ID | GitHub 仓库 | 用途 |
-|-----------|-------------|------|
-| `obsidian-hover-editor` | `nothingislost/obsidian-hover-editor` | 悬停预览 `[[链接]]`，审视时不跳离当前文件 |
-| `code-styler` | `mayurankv/Obsidian-Code-Styler` | `pseudo` 代码块语法高亮（逻辑/动作文件可读性） |
-| `dataview` | `blacksmithgu/obsidian-dataview` | 基于 YAML front matter 的动态审计查询 |
-| `obsidian-mermaid-links` | `vinayaugustine/obsidian-mermaid-links` | 流程图节点一键跳转 Mermaid Live Editor |
-| `breadcrumbs` | `SkepticMystic/breadcrumbs` | 语义关系矩阵视图（Matrix/Tree） |
+| Plugin ID | 下载来源 | 用途 |
+|-----------|---------|------|
+| `obsidian-hover-editor` | https://github.com/nothingislost/obsidian-hover-editor/releases | 悬停预览 `[[链接]]`，审视时不跳离当前文件 |
+| `code-styler` | https://github.com/mayurankv/Obsidian-Code-Styler/releases | `pseudo` 代码块语法高亮 |
+| `dataview` | https://github.com/blacksmithgu/obsidian-dataview/releases | 基于 YAML 的动态审计查询 |
+| `obsidian-mermaid-links` | https://github.com/vinayaugustine/obsidian-mermaid-links/releases | 流程图节点一键跳转编辑器 |
+| `breadcrumbs` | https://github.com/SkepticMystic/breadcrumbs/releases | 语义关系矩阵视图 |
 
-使用 Python 标准库执行检查与安装（跨平台，无外部依赖）：
+**安装要求：**
+- 每个插件需将 `main.js`、`manifest.json`（以及可选的 `styles.css`）放入 `{VAULT_PATH}/.obsidian/plugins/{plugin-id}/`
+- 确保上述 plugin ID 均已列入 `{VAULT_PATH}/.obsidian/community-plugins.json`
 
-```python
-import urllib.request, urllib.error, json, pathlib, shutil
-
-VAULT_PATH = pathlib.Path("{VAULT_PATH}").expanduser()
-PLUGINS = [
-    ("obsidian-hover-editor",  "nothingislost/obsidian-hover-editor"),
-    ("code-styler",            "mayurankv/Obsidian-Code-Styler"),
-    ("dataview",               "blacksmithgu/obsidian-dataview"),
-    ("obsidian-mermaid-links", "vinayaugustine/obsidian-mermaid-links"),
-    ("breadcrumbs",            "SkepticMystic/breadcrumbs"),
-]
-
-plugin_dir   = VAULT_PATH / ".obsidian" / "plugins"
-enabled_json = VAULT_PATH / ".obsidian" / "community-plugins.json"
-
-plugin_dir.mkdir(parents=True, exist_ok=True)
-if not enabled_json.exists():
-    enabled_json.write_text("[]", encoding="utf-8")
-
-newly_installed = 0
-print("Obsidian 插件状态：")
-
-for plugin_id, repo in PLUGINS:
-    pdir = plugin_dir / plugin_id
-    if (pdir / "manifest.json").exists():
-        print(f"  ✅ 已就绪  {plugin_id}")
-        continue
-    pdir.mkdir(exist_ok=True)
-    base = f"https://github.com/{repo}/releases/latest/download"
-    try:
-        for fname in ["main.js", "manifest.json"]:
-            urllib.request.urlretrieve(f"{base}/{fname}", pdir / fname)
-        try:
-            urllib.request.urlretrieve(f"{base}/styles.css", pdir / "styles.css")
-        except urllib.error.HTTPError:
-            pass  # styles.css 可选
-        print(f"  🆕 已安装  {plugin_id}")
-        newly_installed += 1
-    except Exception as e:
-        shutil.rmtree(pdir, ignore_errors=True)
-        print(f"  ❌ 安装失败  {plugin_id}（{e}）")
-        print(f"     手动安装：https://github.com/{repo}/releases")
-
-# 同步 community-plugins.json
-enabled = json.loads(enabled_json.read_text(encoding="utf-8"))
-for plugin_id, _ in PLUGINS:
-    if plugin_id not in enabled:
-        enabled.append(plugin_id)
-enabled_json.write_text(json.dumps(enabled), encoding="utf-8")
-
-print()
-if newly_installed > 0:
-    print(f"⚠️  新安装了 {newly_installed} 个插件，请在 Obsidian 中执行：")
-    print("   Settings → Community plugins → 点击「重载插件」使新插件生效。")
-else:
-    print("ℹ️  请确认 Obsidian 已加载上述插件（首次使用时需在 Obsidian 中重载一次）。")
-```
+完成后展示各插件安装状态（✅ 已就绪 / 🆕 已安装 / ❌ 失败），并提示用户在 Obsidian 中重载插件。
 
 ### Step 2: 确定领域
 
