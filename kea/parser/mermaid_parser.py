@@ -227,6 +227,7 @@ def parse_mermaid(content: str) -> MermaidFlowchart:
 def parse_file(path: str) -> MermaidFlowchart:
     with open(path, encoding="utf-8") as f:
         content = f.read()
-    content = re.sub(r'^\s*```mermaid\s*', '', content)
-    content = re.sub(r'\s*```\s*$', '', content)
+    m = re.search(r'```mermaid\s*\n(.*?)```', content, re.DOTALL)
+    if m:
+        content = m.group(1)
     return parse_mermaid(content)
