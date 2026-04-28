@@ -74,6 +74,10 @@ class PseudocodeExecutor:
         # 按行解析伪代码
         lines = self._parse_lines(code)
 
+        if not lines:
+            trace.issues.append("伪代码为空，无法执行")
+            return trace
+
         # 执行主函数体
         try:
             self._execute_block(lines, trace)
@@ -137,16 +141,16 @@ class PseudocodeExecutor:
                 if line.startswith("if ") or line.startswith("elif "):
                     condition = line[line.find(" ") + 1:].rstrip(":")
                     if self._eval_condition(condition):
-                        i = self._execute_block(block_lines, trace, 0, indent)
-                        if i < len(lines) and lines[i][1].startswith("elif "):
-                            # 跳过剩余的 elif/else
-                            i = self._skip_else_block(lines, i, indent)
-                        continue
+                        self._execute_block(block_lines, trace, 0, indent + 1)
+                        i = block_end
+                        # 跳过剩余的 elif/else
+                        i = self._skip_else_block(lines, i, indent)
                     else:
                         i = block_end
-                        continue
+                    continue
                 elif line == "else:":
-                    i = self._execute_block(block_lines, trace, 0, indent)
+                    self._execute_block(block_lines, trace, 0, indent + 1)
+                    i = block_end
                     continue
 
             elif line.startswith("for "):

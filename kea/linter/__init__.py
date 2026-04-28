@@ -30,6 +30,7 @@ KEA_COMMANDS: dict[str, dict[str, Any]] = {
         "args": [],
         "flags": ["--source", "--source-dir", "--domain", "--domain-cn", "--output-dir"],
     },
+    "flowchart-check": {"args": ["target"], "flags": []},
 }
 
 # Phase gate 条件应使用的 valid category 字符串（来自 validator）
@@ -174,7 +175,7 @@ class AgentFileLinter:
         issues: list[LintIssue] = []
 
         # 提取命令名
-        cmd_match = re.search(r'python3 -m kea\s+(?:--format\s+\w+\s+)?(\w+)', line)
+        cmd_match = re.search(r'python3 -m kea\s+(?:--format\s+\w+\s+)?([\w-]+)', line)
         if not cmd_match:
             return issues
 
