@@ -15,7 +15,7 @@
 | `CHAIN_STATE_PATH` | chain-state 文件路径 |
 | `RESEARCH_REPORT_PATH` | G1 调研报告路径 |
 | `INTERVIEW_SUMMARY_PATH` | G2 访谈摘要路径 |
-| `DIAGRAMS_DIR` | G3/G4 已校验流程图目录 |
+| `DIAGRAMS_DIR` | G3/G4 已校验流程图目录（Step 2.5 由工具扫描，结果以 FLOWCHART_CANDIDATES 形式传入 subagent） |
 | `COVERAGE_THRESHOLD` | 覆盖率阈值，默认 80（读自 chain-state.md front matter） |
 
 ## 前置条件检查
@@ -36,12 +36,36 @@
 
 ### Step 2: 更新 chain-state.md 为 in_progress
 
+### Step 2.5: 扫描流程图候选
+
+执行工具扫描：
+
+```bash
+python3 -m kea --format json mermaid {DIAGRAMS_DIR}
+```
+
+**成功**（`count > 0`）→ 从 JSON 输出构建 `FLOWCHART_CANDIDATES` 文本：
+
+```
+流程图扫描结果（{count} 个文件，{总节点数} 个节点，{总边数} 条边）：
+
+文件：{chart.file}
+  节点：{label}[{type}], {label}[{type}] ...
+  边标签：{edge.label}, {edge.label} ...（仅非空 label）
+
+文件：...
+```
+
+**失败**（`count = 0` 或命令报错）→ 展示错误详情，询问用户：
+- A 检查 DIAGRAMS_DIR 路径后重试
+- B 跳过工具扫描（fallback：Step 3 仍传 `DIAGRAMS_DIR`，subagent 自行读文件）
+
 ### Step 3: Dispatch 对象提取 Agent
 
 读取 `~/.claude/skills/kea/skills/extract-objects/SKILL.md`，以 Subagent 形式 Dispatch：
 
 ```
-DIAGRAMS_DIR: {DIAGRAMS_DIR}
+FLOWCHART_CANDIDATES: {Step 2.5 生成的候选摘要文本}
 SUMMARY_PATHS: {RESEARCH_REPORT_PATH},{INTERVIEW_SUMMARY_PATH}
 OBJECTS_DIR: {VAULT_PATH}/30-Ontology/objects/{DOMAIN_EN}/
 EXISTING_FILES: {EXISTING_FILES（MODE=incremental 时）}
@@ -181,10 +205,14 @@ cd {PROJECT_ROOT} && python3 -m kea --format json validate {OBJECTS_DIR}
 ## 门控失败 → 回退处理
 
 **覆盖率 / 数量不足**：
-- 询问原因：领域边界偏差 or 提取遗漏？
-  - 提取遗漏 → 增量补提取（不回退，直接 Step 3 增量模式）
-  - 领域边界偏差（如发现大量应纳入的对象）→ **回退到 Phase 2**，补充访谈
-  - 候选数本身不准确 → **回退到 Phase 1**，追加调研
+
+按覆盖率数值自动判定回退目标：
+
+| 覆盖率 | 判定 | 回退目标 |
+|--------|------|---------|
+| < 50% | 候选清单本身不准或源材料严重缺失 | **Phase 1**，追加调研 |
+| 50% ~ COVERAGE_THRESHOLD | 可能遗漏或领域边界偏差 | **Phase 2**，补充访谈确认范围 |
+| ≥ COVERAGE_THRESHOLD 但数量不足 | 提取遗漏 | 增量补提取（不回退，Step 3 增量模式）
 
 **主键缺失**：
 - 指定对应文件，直接修改补充主键字段，重新验证条件 ③
