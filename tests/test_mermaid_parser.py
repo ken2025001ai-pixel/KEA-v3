@@ -1,5 +1,5 @@
 """mermaid_parser.parse_file 单元测试."""
-from kea.parser.mermaid_parser import parse_file, NodeType
+from kea.parser.mermaid_parser import parse_file
 
 
 class TestParseFileMd:
@@ -30,3 +30,16 @@ class TestParseFileMd:
         f.write_text("flowchart TD\n  X[订单] --> Y[审批]\n", encoding="utf-8")
         chart = parse_file(str(f))
         assert any(n.label == "订单" for n in chart.nodes)
+
+    def test_md_with_multiple_mermaid_blocks_uses_first(self, tmp_path):
+        """含多个 mermaid 代码块时，应只解析第一个。"""
+        f = tmp_path / "multi.md"
+        f.write_text(
+            "```mermaid\nflowchart TD\n  A[第一个块] --> B[节点B]\n```\n\n"
+            "```mermaid\nflowchart TD\n  C[第二个块] --> D[节点D]\n```\n",
+            encoding="utf-8",
+        )
+        chart = parse_file(str(f))
+        labels = {n.label for n in chart.nodes}
+        assert "第一个块" in labels
+        assert "第二个块" not in labels
