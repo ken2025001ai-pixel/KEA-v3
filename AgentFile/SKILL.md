@@ -56,9 +56,36 @@ KEA_TOOLS_ROOT  = ~/.claude/skills/kea/config.md 中 "KEA_TOOLS_ROOT:" 的值
 PROJECT_ROOT    = KEA_TOOLS_ROOT（传给 phase 文件，用于 cd {PROJECT_ROOT} && python3 -m kea）
 ```
 
-### Step 1.5: 检查并安装 Obsidian 插件
+### Step 1.5: 检查 Vault 路径
 
-KEA 审视工作流依赖以下 5 个插件。每次触发时检查是否已安装，缺失则自动下载。
+读取 `VAULT_PATH` 后，检查目录是否存在：
+
+**若目录存在** → 继续 Step 1.6。
+
+**若目录不存在** → 询问用户：
+
+> "配置中的 Vault 路径不存在：`{VAULT_PATH}`
+>
+> 请输入正确的 Vault 绝对路径，或直接回车使用默认路径：
+> **默认：`~/Documents/KEA-Vault`**"
+
+- 用户输入路径 → 将 `VAULT_PATH` 更新为用户输入的路径，同时更新 `~/.claude/skills/kea/config.md`
+- 用户直接回车 → 将 `VAULT_PATH` 设为 `~/Documents/KEA-Vault`（展开 `~` 为 `$HOME`），创建目录，更新 `~/.claude/skills/kea/config.md`
+
+创建 Vault 目录后展示提示：
+
+> "已创建 Vault 目录：`{VAULT_PATH}`
+>
+> 请在 Obsidian 中手动打开此 Vault：
+> **File → Open Vault → 选择文件夹 → 找到上述目录**
+>
+> 打开后 KEA 将在此 Vault 中创建 Ontology 文档。"
+
+等待用户确认后继续。
+
+### Step 1.6: 检查并安装 Obsidian 插件
+
+KEA 审视工作流依赖以下 5 个插件。每次触发时检查安装状态，缺失则自动下载并启用。
 
 | Plugin ID | GitHub 仓库 | 用途 |
 |-----------|-------------|------|
@@ -81,21 +108,23 @@ mkdir -p "$PLUGIN_DIR"
 [ ! -f "$ENABLED_JSON" ] && echo "[]" > "$ENABLED_JSON"
 
 install_plugin() {
-  local id=$1 repo=$2
-  if [ -f "$PLUGIN_DIR/$id/manifest.json" ]; then return 0; fi
-  mkdir -p "$PLUGIN_DIR/$id"
-  if curl -sL --fail "https://github.com/$repo/releases/latest/download/main.js" \
-       -o "$PLUGIN_DIR/$id/main.js" 2>/dev/null && \
-     curl -sL --fail "https://github.com/$repo/releases/latest/download/manifest.json" \
-       -o "$PLUGIN_DIR/$id/manifest.json" 2>/dev/null; then
-    curl -sL --fail "https://github.com/$repo/releases/latest/download/styles.css" \
-      -o "$PLUGIN_DIR/$id/styles.css" 2>/dev/null || true
-    echo "  ✅ 已安装：$id"
-    INSTALLED=$((INSTALLED+1))
-  else
-    rm -rf "$PLUGIN_DIR/$id"
-    echo "  ❌ 安装失败：$id（请手动安装：https://github.com/$repo/releases）"
+  local id=$1 repo=$2 status="✅ 已就绪"
+  if [ ! -f "$PLUGIN_DIR/$id/manifest.json" ]; then
+    mkdir -p "$PLUGIN_DIR/$id"
+    if curl -sL --fail "https://github.com/$repo/releases/latest/download/main.js" \
+         -o "$PLUGIN_DIR/$id/main.js" 2>/dev/null && \
+       curl -sL --fail "https://github.com/$repo/releases/latest/download/manifest.json" \
+         -o "$PLUGIN_DIR/$id/manifest.json" 2>/dev/null; then
+      curl -sL --fail "https://github.com/$repo/releases/latest/download/styles.css" \
+        -o "$PLUGIN_DIR/$id/styles.css" 2>/dev/null || true
+      status="🆕 已安装"
+      INSTALLED=$((INSTALLED+1))
+    else
+      rm -rf "$PLUGIN_DIR/$id"
+      status="❌ 安装失败（手动安装：https://github.com/$repo/releases）"
+    fi
   fi
+  echo "  $status  $id"
 }
 
 enable_plugin() {
@@ -107,21 +136,22 @@ with open(\"$ENABLED_JSON\", \"w\") as f: json.dump(p, f)
 "
 }
 
+echo "Obsidian 插件状态："
 install_plugin "obsidian-hover-editor"  "nothingislost/obsidian-hover-editor"  && enable_plugin "obsidian-hover-editor"
 install_plugin "code-styler"            "mayurankv/Obsidian-Code-Styler"        && enable_plugin "code-styler"
 install_plugin "dataview"               "blacksmithgu/obsidian-dataview"        && enable_plugin "dataview"
 install_plugin "obsidian-mermaid-links" "vinayaugustine/obsidian-mermaid-links" && enable_plugin "obsidian-mermaid-links"
 install_plugin "breadcrumbs"            "SkepticMystic/breadcrumbs"             && enable_plugin "breadcrumbs"
 
+echo ""
 if [ "$INSTALLED" -gt 0 ]; then
-  echo ""
-  echo "⚠️  新安装了 $INSTALLED 个插件，请在 Obsidian 中执行："
-  echo "   Settings → Community plugins → 点击「重载插件」使其生效。"
+  echo "⚠️  新安装了 $INSTALLED 个插件。请在 Obsidian 中执行："
+  echo "   Settings → Community plugins → 点击「重载插件」使新插件生效。"
+else
+  echo "ℹ️  请确认 Obsidian 已加载上述插件（首次使用时需在 Obsidian 中重载一次）。"
 fi
 '
 ```
-
-若 Vault 目录不存在则跳过本步骤（Vault 将在 Step 3 初始化后生效）。
 
 ### Step 2: 确定领域
 
@@ -359,7 +389,7 @@ Ontology 节点类型与颜色映射：
 
 ## 推荐 Obsidian 插件
 
-以下插件由 Step 1.5 自动检查并安装。
+以下插件由 Step 1.6 自动检查并安装。
 
 | 插件 | Plugin ID | 用途 | 市场 |
 |------|-----------|------|------|
