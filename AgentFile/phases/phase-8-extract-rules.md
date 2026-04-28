@@ -12,9 +12,9 @@
 | `VAULT_PATH` | Vault 路径 |
 | `CHAIN_STATE_PATH` | chain-state 文件路径 |
 | `RESEARCH_REPORT_PATH` | G1 调研报告路径 |
-| `OBJECTS_DIR` | objects 目录 |
-| `LOGIC_DIR` | logic 目录 |
-| `ACTIONS_DIR` | actions 目录 |
+| `OBJECTS_DIR` | objects 目录（Step 2.5 由工具扫描，结果以 OBJECT_REGISTRY 形式传入 subagent） |
+| `LOGIC_DIR` | logic 目录（Step 2.5 由工具扫描，结果以 LOGIC_REGISTRY 形式传入 subagent） |
+| `ACTIONS_DIR` | actions 目录（Step 2.5 由工具扫描，结果以 ACTION_REGISTRY 形式传入 subagent） |
 
 ## 前置条件检查
 
@@ -57,17 +57,83 @@
 
 ### Step 3: 更新 chain-state.md 为 in_progress
 
+### Step 2.5: 预处理逻辑/动作/对象注册表
+
+**工具调用 1**：扫描逻辑文档
+
+```bash
+python3 -m kea --format json parse {LOGIC_DIR}
+```
+
+**成功**（`count > 0`）→ 筛选 `type=logic`，生成 `LOGIC_REGISTRY` 文本：
+
+```
+已确认逻辑（{N} 个）：
+
+{逻辑名} (id={id})
+  前置条件：{前置条件描述} ...
+  关联动作：{动作名1}, {动作名2} ...
+```
+
+**失败** → 展示错误详情，询问用户：
+- A 检查 LOGIC_DIR 路径后重试
+- B 跳过扫描（fallback：Step 4 仍传 `LOGIC_DIR`）
+
+---
+
+**工具调用 2**：扫描动作文档
+
+```bash
+python3 -m kea --format json parse {ACTIONS_DIR}
+```
+
+**成功**（`count > 0`）→ 筛选 `type=action`，生成 `ACTION_REGISTRY` 文本：
+
+```
+已确认动作（{N} 个）：
+
+{动作名} (id={id})
+  所属逻辑：{逻辑名} (id={id})
+  输入约束：{参数名}[{类型},required={true|false}] ...
+  操作对象：{对象名}[uses|modifies] ...
+```
+
+**失败** → 展示错误详情，询问用户：
+- A 检查 ACTIONS_DIR 路径后重试
+- B 跳过扫描（fallback：Step 4 仍传 `ACTIONS_DIR`）
+
+---
+
+**工具调用 3**：扫描对象文档
+
+```bash
+python3 -m kea --format json parse {OBJECTS_DIR}
+```
+
+**成功**（`count > 0`）→ 生成 `OBJECT_REGISTRY` 文本：
+
+```
+已确认对象（{N} 个）：
+
+{对象名} (id={id})
+  属性：{属性名}[{类型},主键], {属性名}[{类型}] ...
+```
+
+**失败** → 询问 A 重试 / B 跳过（fallback：Step 4 仍传 `OBJECTS_DIR`）
+
 ### Step 4: Dispatch 规则提取 Agent（如有候选）
 
 读取 `~/.claude/skills/kea/skills/extract-rules/SKILL.md`，Dispatch：
 
 ```
-LOGIC_DIR: {LOGIC_DIR}
-ACTIONS_DIR: {ACTIONS_DIR}
-OBJECTS_DIR: {OBJECTS_DIR}
+RULE_CANDIDATES: {Step 1/2 收集并经用户确认的规则候选列表文本}
+LOGIC_REGISTRY: {Step 2.5 生成的逻辑注册表文本}
+ACTION_REGISTRY: {Step 2.5 生成的动作注册表文本}
+OBJECT_REGISTRY: {Step 2.5 生成的对象注册表文本}
 RULES_DIR: {VAULT_PATH}/30-Ontology/rules/{DOMAIN_EN}/
 SUMMARY_PATHS: {RESEARCH_REPORT_PATH}
 补充提取目标: {用户确认的候选规则名（如有范围限制）}
+EXISTING_FILES: {EXISTING_FILES（如有）}
 ```
 
 等待完成，读取返回状态。
