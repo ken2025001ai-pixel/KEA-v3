@@ -159,6 +159,7 @@ RULES_DIR:              {VAULT_PATH}/30-Ontology/rules/{DOMAIN_EN}/
 DIAGRAMS_DIR:           {VAULT_PATH}/30-Ontology/diagrams/{DOMAIN_EN}/
 RESEARCH_REPORT_PATH:   {VAULT_PATH}/RAWData/KEAOutput/research/{DOMAIN_EN}-research.md
 INTERVIEW_SUMMARY_PATH: {VAULT_PATH}/RAWData/KEAOutput/interviews/{DOMAIN_EN}-interview-summary.md
+SUPPLEMENT_PATH:        {chain-state front matter 中 supplement_path 字段的值，为空时传空字符串}
 ```
 
 ### Step 5: 阶段完成后
@@ -192,7 +193,7 @@ INTERVIEW_SUMMARY_PATH: {VAULT_PATH}/RAWData/KEAOutput/interviews/{DOMAIN_EN}-in
 
 ```
 Phase 1  领域调研      → 生成调研报告，确认候选清单
-Phase 2  专家访谈      → 强制对话式确认，生成访谈摘要         [不可跳过]
+Phase 2  专家访谈      → 评估报告质量，专家确认 gap，按需定向补充  [不可跳过]
 Phase 3  流程图生成    → 生成 Mermaid 流程图，专家逐图确认
 Phase 4  流程图校验    → 结构 + 语义 13 项校验，严重问题=0    [硬性]
 Phase 5  对象提取      → 提取所有业务对象，覆盖率≥80%
