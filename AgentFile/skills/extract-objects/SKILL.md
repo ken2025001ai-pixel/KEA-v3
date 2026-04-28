@@ -222,7 +222,7 @@ Return status and summary to the phase file. **Do NOT ask any questions or inter
 状态：NEEDS_CONTEXT
 
 缺少信息：
-- {具体说明，如"DIAGRAMS_DIR 为空，无流程图文件"}
+- {具体说明，如"FLOWCHART_CANDIDATES 为空，无流程图候选数据"}
 ```
 
 **If blocked:**
