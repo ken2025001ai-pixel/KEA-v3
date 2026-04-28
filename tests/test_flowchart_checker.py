@@ -1,4 +1,5 @@
 # tests/test_flowchart_checker.py
+import subprocess, json as _json
 import pytest
 from kea.parser.mermaid_parser import parse_mermaid
 from kea.validator.flowchart_checker import FlowchartChecker, CheckIssue
@@ -124,3 +125,56 @@ flowchart TD
   B --> E
 """)
     assert issues == []
+
+
+def test_cli_json_output_clean(tmp_path):
+    """CLI 输出合规流程图时 summary.failed == 0."""
+    md = tmp_path / "流程.md"
+    md.write_text("""---
+domain: test
+process: 流程
+phase: flowchart
+created_at: 2026-04-28
+---
+```mermaid
+flowchart TD
+  S((开始)) --> D{条件?}
+  D -->|是| A[动作A]
+  D -->|否| B[动作B]
+  A --> E((结束))
+  B --> E
+```
+""")
+    result = subprocess.run(
+        ["python3", "-m", "kea", "--format", "json", "flowchart-check", str(tmp_path)],
+        capture_output=True, text=True,
+        cwd="/Users/kenkangning/KEA-v3"
+    )
+    data = _json.loads(result.stdout)
+    assert data["summary"]["failed"] == 0
+    assert data["results"][0]["passed"] is True
+
+
+def test_cli_json_output_with_issue(tmp_path):
+    """CLI 输出含问题流程图时 summary.failed == 1，issues 非空。"""
+    md = tmp_path / "有问题.md"
+    md.write_text("""---
+domain: test
+process: 有问题
+phase: flowchart
+created_at: 2026-04-28
+---
+```mermaid
+flowchart TD
+  A[动作] --> E((结束))
+```
+""")
+    result = subprocess.run(
+        ["python3", "-m", "kea", "--format", "json", "flowchart-check", str(tmp_path)],
+        capture_output=True, text=True,
+        cwd="/Users/kenkangning/KEA-v3"
+    )
+    data = _json.loads(result.stdout)
+    assert data["summary"]["failed"] == 1
+    checks = [i["check"] for i in data["results"][0]["issues"]]
+    assert "S1" in checks
