@@ -109,7 +109,7 @@ Map node types to pseudocode constructs (per mermaid-spec.md):
 
 ## Step 2: Extract business logic
 
-When reading Mermaid flowcharts (in `DIAGRAMS_DIR`), refer to `~/.claude/skills/kea/docs/mermaid-spec.md` to understand node semantics:
+When interpreting flowchart nodes from `FLOWCHART_CANDIDATES`, refer to `~/.claude/skills/kea/docs/mermaid-spec.md` to understand node semantics:
 - `((开始))` / `((结束))` / `>结束]` → flow entry/exit points
 - `[动作名称]` → atomic ACTION (extracted as action doc in Phase 7)
 - `(活动名称)` → composite ACTIVITY (decompose into sub-steps)
