@@ -13,8 +13,8 @@
 | `CHAIN_STATE_PATH` | chain-state 文件路径 |
 | `RESEARCH_REPORT_PATH` | G1 调研报告路径 |
 | `INTERVIEW_SUMMARY_PATH` | G2 访谈摘要路径 |
-| `OBJECTS_DIR` | `{VAULT_PATH}/30-Ontology/objects/{DOMAIN_EN}/` |
-| `LOGIC_DIR` | `{VAULT_PATH}/30-Ontology/logic/{DOMAIN_EN}/` |
+| `OBJECTS_DIR` | `Phase 5 输出对象目录（Step 2.5 由工具扫描，结果以 OBJECT_REGISTRY 形式传入 subagent）` |
+| `LOGIC_DIR` | `Phase 6 输出逻辑目录（Step 2.5 由工具扫描，结果以 LOGIC_REGISTRY 形式传入 subagent）` |
 | `COVERAGE_THRESHOLD` | 覆盖率阈值 |
 
 ## 前置条件检查
@@ -31,6 +31,53 @@
 - 有文件 → `MODE = incremental`
 
 ### Step 2: 更新 chain-state.md 为 in_progress
+
+### Step 2.5: 预处理逻辑注册表与对象注册表
+
+**工具调用 1**：扫描逻辑文档
+
+```bash
+python3 -m kea --format json parse {LOGIC_DIR}
+```
+
+**成功**（`count > 0`）→ 筛选 `type=logic`，生成 `LOGIC_REGISTRY` 文本：
+
+```
+已确认逻辑（{N} 个）：
+
+{逻辑名} (id={id})
+  关联动作：{动作名1}, {动作名2} ...（来自 relations type=calls）
+  输入对象：{对象名1}, {对象名2} ...
+  输出对象：{对象名1} ...
+
+{逻辑名} (id={id})
+  ...
+```
+
+**失败**（count = 0 或命令报错）→ 展示错误详情，询问用户：
+- A 检查 LOGIC_DIR 路径后重试
+- B 跳过工具扫描（fallback：Step 4 仍传 `LOGIC_DIR`，subagent 自行读文件）
+
+---
+
+**工具调用 2**：扫描对象文档
+
+```bash
+python3 -m kea --format json parse {OBJECTS_DIR}
+```
+
+**成功**（`count > 0`）→ 生成 `OBJECT_REGISTRY` 文本：
+
+```
+已确认对象（{N} 个）：
+
+{对象名} (id={id})
+  属性：{属性名}[{类型},主键], {属性名}[{类型}] ...
+```
+
+**失败** → 展示错误详情，询问用户：
+- A 检查 OBJECTS_DIR 路径后重试
+- B 跳过扫描（fallback：Step 4 仍传 `OBJECTS_DIR`）
 
 ### Step 3: 收集动作候选清单
 
@@ -53,8 +100,9 @@
 读取 `~/.claude/skills/kea/skills/extract-actions/SKILL.md`，Dispatch：
 
 ```
-LOGIC_DIR: {LOGIC_DIR}
-OBJECTS_DIR: {OBJECTS_DIR}
+REFERENCED_ACTIONS: {Step 3 已收集的动作候选列表文本}
+LOGIC_REGISTRY: {Step 2.5 生成的逻辑注册表文本}
+OBJECT_REGISTRY: {Step 2.5 生成的对象注册表文本}
 ACTIONS_DIR: {VAULT_PATH}/30-Ontology/actions/{DOMAIN_EN}/
 SUMMARY_PATHS: {RESEARCH_REPORT_PATH},{INTERVIEW_SUMMARY_PATH}
 EXISTING_FILES: {EXISTING_FILES（如有）}
