@@ -15,6 +15,7 @@
 | `CHAIN_STATE_PATH` | chain-state 文件路径 |
 | `RESEARCH_REPORT_PATH` | G1 产出的调研报告路径 |
 | `INTERVIEW_SUMMARY_PATH` | G2 访谈摘要路径 |
+| `SUPPLEMENT_PATH` | 可选，G2 补充调研文档路径（chain-state front matter 中 `supplement_path` 字段，为空时忽略） |
 
 目录变量：
 ```
@@ -33,7 +34,7 @@ DIAGRAMS_DIR:         {VAULT_PATH}/30-Ontology/diagrams/{DOMAIN_EN}/
 
 ### Step 2: 确定流程候选清单
 
-读取 `INTERVIEW_SUMMARY_PATH`和 `RESEARCH_REPORT_PATH`，从中提取已确认的逻辑/流程列表。
+读取 `RESEARCH_REPORT_PATH` 和 `INTERVIEW_SUMMARY_PATH`，若 `SUPPLEMENT_PATH` 非空则同时读取补充文档，三份文档合并提取已确认的逻辑/流程候选清单。补充文档中的候选优先级高于调研报告（专家已显式确认）。
 
 检查 `DIAGRAMS_DIR` 中是否已有 `.md`（Mermaid）文件：
 
