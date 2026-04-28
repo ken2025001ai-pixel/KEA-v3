@@ -33,47 +33,28 @@ VALIDATION_REPORT_DIR: {VAULT_PATH}/RAWData/KEAOutput/reports/validation/
 
 ## Phase A — 结构校验
 
-### Step A1: 运行结构分析
+### Step A1: 运行 kea flowchart-check
 
 ```bash
-cd {PROJECT_ROOT} && python3 -m kea --format json mermaid {DIAGRAMS_DIR}
+cd {PROJECT_ROOT} && python3 -m kea --format json flowchart-check {DIAGRAMS_DIR}
 ```
 
-读取输出，提取每个流程图的以下信息：
-- 节点列表（类型、标签）
-- 边列表（源、目标、标签）
-- `decision_branches()` 结果（判断节点 → 出路边映射）
-
-### Step A2: 结构问题检查
-
-对每个流程图，检查以下 4 项结构规则：
-
-| # | 检查项 | 通过标准 |
-|---|--------|---------|
-| S1 | 开始节点 | 有且仅有 1 个 START 类型节点 |
-| S2 | 结束节点 | 至少有 1 个 END 类型节点 |
-| S3 | 判断节点分支 | 每个 DECISION / SUB_DECISION 节点出路数 ≥ 2 |
-| S4 | 无孤立节点 | 所有节点（除 START）均有入路，所有节点（除 END）均有出路 |
-
-**如果存在结构错误**，展示：
+读取 JSON，若 `summary.failed > 0`，展示失败详情：
 
 ```
-[结构校验] 发现 {N} 个结构问题：
+[结构校验] {N} 个流程图存在结构问题：
 
-  {流程名1}:
-    ❌ [S3] 判断节点 "{节点标签}" 只有 {n} 条出路（需要 ≥ 2）
-    ❌ [S4] 节点 "{节点标签}" 无出路（死节点）
-
-  {流程名2}:
-    ❌ [S1] 缺少开始节点
+  {文件名}：
+    ❌ [S1] {message}
+    ❌ [S3] {message}
 ```
 
-提示用户修复后，询问：
-> "请修复上述结构问题后回复"继续"重新校验，或回复"跳过"直接进入语义校验（不建议）。"
+提示：
+> "请修复上述结构问题后回复"继续"重新校验。"
 
-等待用户回复，再次运行 Step A1-A2，循环直到结构全部通过或用户选择跳过。
+等待用户回复，重跑 `kea flowchart-check`，循环直到 `summary.failed = 0`。
 
-**如果无结构错误**：告知用户"结构校验通过"，直接进入 Phase B。
+**若无结构问题（`summary.failed = 0`）**：告知用户"结构校验通过（S1-S4）"，直接进入 Phase B。
 
 ---
 
