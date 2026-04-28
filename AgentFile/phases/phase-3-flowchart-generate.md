@@ -2,7 +2,7 @@
 
 ## 定位
 
-本体萃取技能链第 3 阶段。以访谈摘要为底稿，将自然语言描述的业务流程转化为形式化的 Mermaid 流程图，经业务专家确认后作为后续对象/逻辑/动作提取的**权威业务基准**。
+本体萃取技能链第 3 阶段。从源文档提取流程候选，由专家确认范围，Dispatch generate-flowcharts sub-skill 批量生成 Mermaid 流程图，经结构校验和批量人类确认后作为后续提取的**权威业务基准**。
 
 **意义**：自然语言存在歧义；Mermaid 流程图将流程逻辑形式化，迫使歧义在提取之前消解。专家对流程图的背书等同于对业务逻辑真相的背书。
 
@@ -16,10 +16,11 @@
 | `RESEARCH_REPORT_PATH` | G1 产出的调研报告路径 |
 | `INTERVIEW_SUMMARY_PATH` | G2 访谈摘要路径 |
 | `SUPPLEMENT_PATH` | 可选，G2 补充调研文档路径（chain-state front matter 中 `supplement_path` 字段，为空时忽略） |
+| `PROJECT_ROOT` | kea 工具层根目录（用于运行 `python3 -m kea`） |
 
 目录变量：
 ```
-DIAGRAMS_DIR:         {VAULT_PATH}/30-Ontology/diagrams/{DOMAIN_EN}/
+DIAGRAMS_DIR: {VAULT_PATH}/30-Ontology/diagrams/{DOMAIN_EN}/
 ```
 
 ## 前置条件检查
@@ -32,150 +33,149 @@ DIAGRAMS_DIR:         {VAULT_PATH}/30-Ontology/diagrams/{DOMAIN_EN}/
 
 将 Phase 3 状态更新为 `🔄 进行中`。
 
-### Step 2: 确定流程候选清单
+### Step 2: 确定流程候选清单并获取用户确认
 
-读取 `RESEARCH_REPORT_PATH` 和 `INTERVIEW_SUMMARY_PATH`，若 `SUPPLEMENT_PATH` 非空则同时读取补充文档，三份文档合并提取已确认的逻辑/流程候选清单。补充文档中的候选优先级高于调研报告（专家已显式确认）。
+读取 `RESEARCH_REPORT_PATH` 和 `INTERVIEW_SUMMARY_PATH`，若 `SUPPLEMENT_PATH` 非空则同时读取补充文档，三份文档合并提取逻辑/流程候选清单。补充文档中的候选优先级高于调研报告。
 
-检查 `DIAGRAMS_DIR` 中是否已有 `.md`（Mermaid）文件：
+检查 `DIAGRAMS_DIR` 中是否已有 `.md` 文件：
+- **目录为空** → `EXISTING_FILES = []`，全量模式
+- **目录已有文件** → 记录 `EXISTING_FILES`（已有文件名列表），展示给用户
 
-- **目录为空**：从访谈摘要中重新提取，进入 Step 3（生成模式）
-- **目录已有部分文件**：展示已有流程图与尚未生成的流程，询问用户是否补充生成缺失部分
-
-展示流程候选清单：
+展示候选清单并请用户确认生成范围：
 
 ```
-流程图候选清单（共 {N} 个）：
+流程候选清单（共 {N} 个）：
 
-  核心流程（来自访谈确认）：
   【P1】{流程名} — {一句话描述}
   【P2】{流程名} — {一句话描述}
   ...
 
   已有流程图（如有）：
-  ✅ 【P3】{流程名} — 已存在，可跳过或重新生成
+  ✅ 【P3】{流程名} — 已存在，默认保留
+
+请确认生成范围：
+  ✅ 全部生成（{N} 个，已有的重新覆盖）
+  🔄 仅生成缺失（{M} 个，已有的保留）
+  ➕ 添加额外流程：[描述]
+  ✂️ 从清单移除：[P{n}]
 ```
 
-询问用户：
-> "请确认生成范围：
-> - ✅ 生成全部（{N} 个，已有的重新覆盖）
-> - 🔄 仅生成缺失（{M} 个，已有的保留）
-> - ➕ 添加额外流程：[描述]
-> - 调整：[从清单移除 P{n}]"
+等待用户确认，得到 `CONFIRMED_CANDIDATES`（JSON 数组，每项含 `name` + `description`）。
 
-### Step 3: 生成 Mermaid 流程图
+### Step 3: Dispatch generate-flowcharts sub-skill
 
-Mermaid 节点类型约定：
-
-| 形状语法 | 节点类型 | 用途 |
-|---------|---------|------|
-| `((开始))` / `((结束))` | 开始 / 结束 | 流程进出点 |
-| `[动作描述]` | 动作节点 | 执行一个业务操作 |
-| `(活动描述)` | 活动节点 | 业务活动（带上下文） |
-| `{判断条件?}` | 判断节点 | 二值分支（必须有"是"和"否"两条出路） |
-| `[[子流程名称]]` | 子流程节点 | 调用另一个已定义流程 |
-| `{{判断条件?}}` | 子流程判断节点 | 调用子流程并按其结果分支 |
-
-**每个流程图必须包含**：
-- 明确标注输入参数的 `((开始))` 节点（注释形式：`%% 输入: 参数名`）
-- 明确标注输出结果的 `((结束))` 节点（注释形式：`%% 输出: 结果名`）
-- 每个判断节点均有"是"和"否"两条出路
-- 所有路径均可到达结束节点
-
-**生成格式**（保存至 `DIAGRAMS_DIR/{流程名}.md`）：
-
-````markdown
----
-domain: {DOMAIN_EN}
-process: {流程名}
-phase: flowchart
-created_at: {YYYY-MM-DD}
----
-
-```mermaid
-flowchart TD
-  start(("开始\n输入: {输入参数}"))
-  ...
-  finish(("结束\n输出: {输出结果}"))
-```
-````
-
-每个确认的流程逐一生成，保存文件。
-
-### Step 4: 展示生成结果
+读取 `~/.claude/skills/kea/skills/generate-flowcharts/SKILL.md`，以 Subagent 形式 Dispatch，传入：
 
 ```
-流程图生成完成（共 {N} 个）：
-
-  ✅ {流程名1} → diagrams/{DOMAIN_EN}/{流程名1}.md
-  ✅ {流程名2} → diagrams/{DOMAIN_EN}/{流程名2}.md
-  ...
-
-请在 Obsidian 中查看流程图（需安装 Mermaid 预览或 obsidian-mermaid-links 插件）。
+CONFIRMED_CANDIDATES: {CONFIRMED_CANDIDATES JSON}
+RESEARCH_REPORT_PATH: {RESEARCH_REPORT_PATH}
+INTERVIEW_SUMMARY_PATH: {INTERVIEW_SUMMARY_PATH}
+SUPPLEMENT_PATH: {SUPPLEMENT_PATH}（可选）
+DIAGRAMS_DIR: {DIAGRAMS_DIR}
+DOMAIN_CN: {DOMAIN_CN}
+DOMAIN_EN: {DOMAIN_EN}
+EXISTING_FILES: {EXISTING_FILES JSON}（可选）
 ```
 
-### Step 5: 逐图人类确认
+等待返回，读取状态码。
 
-对每个生成的流程图，展示 Mermaid 代码（或引导用户在 Obsidian 中查看），询问：
+**DONE_WITH_CONCERNS** → 疑虑前置：展示疑虑清单，告知用户哪些流程置信度低，进入 Step 4。
 
-> "【{流程名}】流程图已就绪。
->
-> - ✅ 确认准确，继续下一个
-> - ✏️ 需要调整：[说明修改内容]
-> - 🔄 重新生成：[重新描述该流程的业务逻辑]"
+**NEEDS_CONTEXT / BLOCKED** → 展示问题，询问用户是否补充信息重试，或回退至 Phase 2。
 
-- **确认** → 记录该流程图已通过专家确认，继续下一个
-- **需要调整** → 按说明修改 Mermaid 文件，重新展示，等待再次确认
-- **重新生成** → 重新生成该流程图，重新展示
+**DONE** → 直接进入 Step 4。
 
-所有流程图均获专家确认后继续。
+### Step 4: 结构校验（kea flowchart-check）
+
+```bash
+cd {PROJECT_ROOT} && python3 -m kea --format json flowchart-check {DIAGRAMS_DIR}
+```
+
+读取 JSON，展示结果：
+
+```
+结构校验（S1-S4）：
+  总计：{N} 个，通过：{P} 个，失败：{F} 个
+```
+
+若 `summary.failed > 0`，展示失败详情：
+
+```
+  ❌ {文件名}：
+     [S1] {message}
+     [S3] {message}
+```
+
+提示：
+> "请修复上述结构问题后回复"继续"重新校验。修复方式：直接编辑 `{DIAGRAMS_DIR}` 下对应文件。"
+
+等待用户回复后重跑 `kea flowchart-check`，循环直到 `summary.failed = 0`。
+
+### Step 5: 批量人类确认
+
+结构校验全部通过后：
+
+```
+{N} 个流程图已生成并通过结构校验（S1-S4）。
+
+请在 Obsidian 中查看渲染后的流程图：
+  📁 30-Ontology/diagrams/{DOMAIN_EN}/
+
+所有流程图审阅完毕后，请回复：
+  ✅ 全部确认，继续
+  ✏️ 需要调整：[列出流程名 + 具体修改]
+```
+
+若用户列出调整项，逐项修改对应 Mermaid 文件，修改后重跑 `kea flowchart-check` 确认无结构破坏，再次展示提示引导用户确认。
+
+循环直到用户回复"全部确认"。
 
 ## 门控评估（G3）
 
 ### 自动验证项
 
 ```bash
-python3 -m kea --format json mermaid {DIAGRAMS_DIR}
+cd {PROJECT_ROOT} && python3 -m kea --format json flowchart-check {DIAGRAMS_DIR}
 ```
 
-| 条件 | 通过标准 | 是否可绕过 |
+| 条件 | 检查方式 | 通过标准 |
 |------|---------|---------|
-| ① 流程图文件已生成 | `DIAGRAMS_DIR` 下文件数 ≥ 访谈确认的流程数 | ❌ 不可绕过 |
-| ② Mermaid 语法可解析 | `kea mermaid` 命令无解析错误 | ❌ 不可绕过 |
-| ③ 开始/结束节点存在 | 每个流程图有且只有一个 START 和至少一个 END 节点 | ❌ 不可绕过 |
-| ④ 判断节点有出路 | 所有 DECISION 节点通过 `decision_branches()` 检查，出路 ≥ 2 | ❌ 不可绕过 |
+| ① 流程图文件已生成 | 统计 DIAGRAMS_DIR 下 .md 文件数 | ≥ CONFIRMED_CANDIDATES 数量 |
+| ② 结构校验全部通过 | kea flowchart-check `summary.failed` | = 0 |
+| ③ 专家已批量确认 | 用户在 Step 5 回复"全部确认" | 有记录 |
 
-如有验证失败，说明具体问题并修复，再次验证后继续。
+展示验证结果：
+
+```
+自动验证：
+  ① 流程图数量：✅ {N} 个（≥ 候选数 {M}）
+  ② 结构校验：✅ 全部通过（S1-S4）
+  ③ 专家确认：✅ 已批量确认
+```
+
+如有失败项，说明原因，不进入人类确认。
 
 ### 人类确认
 
-验证通过后，展示确认汇总：
+验证全部通过后：
 
-```
-流程图生成完成：
-
-  已生成：{N} 个流程图
-  专家确认：{N}/{N} 通过
-  解析验证：全部通过
-
-  流程清单：
-  ✅ {流程名1} — {一句话描述}
-  ✅ {流程名2} — {一句话描述}
-  ...
-```
-
-询问：
-> "所有流程图已完成并获专家确认。是否进入流程图校验（Phase 4）以做深度形式化检查？
+> "流程图生成完成：
 >
-> - ✅ 继续：进入 Phase 4（建议，发现潜在逻辑问题）
+> - 已生成：{N} 个流程图
+> - 结构校验：✅ 全部通过
+> - 专家确认：✅ 已完成
+>
+> 是否进入流程图校验（Phase 4）做深度语义检查？
+> - ✅ 继续：进入 Phase 4（建议）
 > - ⏭️ 跳过：直接进入 Phase 5（对象提取）"
 
 - **继续** → 更新 chain-state.md，进入 Phase 4
-- **跳过** → 更新 chain-state.md，跳至 `current_phase: 5`，告知用户
+- **跳过** → 更新 chain-state.md，`current_phase: 5`
 
 ## 门控通过 → 更新 chain-state.md
 
 ```markdown
-| 3 | 流程图生成 | ✅ 通过 | {YYYY-MM-DD HH:MM} | 生成 {N} 个流程图，专家全部确认 |
+| 3 | 流程图生成 | ✅ 通过 | {YYYY-MM-DD HH:MM} | 生成 {N} 个，结构校验通过，专家批量确认 |
 ```
 
 追加门控记录：
@@ -183,21 +183,19 @@ python3 -m kea --format json mermaid {DIAGRAMS_DIR}
 ```markdown
 ### G3 通过记录（{YYYY-MM-DD HH:MM}）
 - 流程图数量：{N} 个 ✅
-- Mermaid 解析：全部通过 ✅
-- 判断节点分支：全部有效 ✅
-- 专家确认：{N}/{N} ✅
+- 结构校验（kea flowchart-check）：全部通过 ✅
+- 专家批量确认：✅
 - 目录：diagrams/{DOMAIN_EN}/
 ```
 
-更新 `current_phase: 4`（或 `5` 若用户选择跳过 Phase 4）。
+更新 `current_phase: 4`（或 `5` 若跳过）。
 
 ## 门控失败 → 回退处理
 
 | 失败类型 | 处置 |
 |---------|------|
-| Mermaid 语法错误 | 修复对应文件，重新解析 |
-| 判断节点缺少分支 | 补充缺失的出路边，重新验证 |
-| 专家拒绝流程图 | 按专家反馈重新生成，重新确认 |
-| 访谈摘要不足以生成流程 | 回退到 Phase 2 补充访谈 |
+| sub-skill BLOCKED | 询问是否补充文档重试或回退 Phase 2 |
+| 结构校验失败循环 > 3 次 | 提示用户考虑简化流程图或回退 Phase 2 补充访谈 |
+| 专家拒绝全部流程图 | 回退至 Phase 2 重新访谈 |
 
 在 chain-state.md 追加回退记录。
