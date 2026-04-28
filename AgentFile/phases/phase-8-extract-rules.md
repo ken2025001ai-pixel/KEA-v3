@@ -77,7 +77,7 @@ python3 -m kea --format json parse {LOGIC_DIR}
 
 **失败** → 展示错误详情，询问用户：
 - A 检查 LOGIC_DIR 路径后重试
-- B 跳过扫描（fallback：Step 4 仍传 `LOGIC_DIR`）
+- B 跳过扫描（LOGIC_REGISTRY 留空，subagent 将缺少逻辑注册表，guards 关系声明需手工补充）
 
 ---
 
@@ -100,7 +100,7 @@ python3 -m kea --format json parse {ACTIONS_DIR}
 
 **失败** → 展示错误详情，询问用户：
 - A 检查 ACTIONS_DIR 路径后重试
-- B 跳过扫描（fallback：Step 4 仍传 `ACTIONS_DIR`）
+- B 跳过扫描（ACTION_REGISTRY 留空，subagent 将缺少动作注册表，constrains 关系声明需手工补充）
 
 ---
 
@@ -119,7 +119,7 @@ python3 -m kea --format json parse {OBJECTS_DIR}
   属性：{属性名}[{类型},主键], {属性名}[{类型}] ...
 ```
 
-**失败** → 询问 A 重试 / B 跳过（fallback：Step 4 仍传 `OBJECTS_DIR`）
+**失败** → 询问 A 重试 / B 跳过（OBJECT_REGISTRY 留空，subagent 将无法校验对象字段引用有效性）
 
 ### Step 4: Dispatch 规则提取 Agent（如有候选）
 

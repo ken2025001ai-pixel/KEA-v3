@@ -56,7 +56,7 @@ python3 -m kea --format json parse {LOGIC_DIR}
 
 **失败**（count = 0 或命令报错）→ 展示错误详情，询问用户：
 - A 检查 LOGIC_DIR 路径后重试
-- B 跳过工具扫描（fallback：Step 4 仍传 `LOGIC_DIR`，subagent 自行读文件）
+- B 跳过工具扫描（LOGIC_REGISTRY 留空，subagent 将缺少逻辑注册表，part_of 关系声明需手工补充）
 
 ---
 
@@ -77,7 +77,7 @@ python3 -m kea --format json parse {OBJECTS_DIR}
 
 **失败** → 展示错误详情，询问用户：
 - A 检查 OBJECTS_DIR 路径后重试
-- B 跳过扫描（fallback：Step 4 仍传 `OBJECTS_DIR`）
+- B 跳过扫描（OBJECT_REGISTRY 留空，subagent 将无法校验对象链接有效性）
 
 ### Step 3: 收集动作候选清单
 
