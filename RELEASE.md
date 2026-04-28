@@ -153,6 +153,8 @@ KEA_VAULT_PATH=~/Documents/TestVault \
 
 | 版本 | 日期 | 主要变更 |
 |------|------|---------|
+| 4.1.2 | 2026-04-29 | Step 1.6 插件安装改为 Python 标准库（跨平台，移除 bash 依赖） |
 | 4.1.1 | 2026-04-28 | SKILL.md 新增 Step 1.5（Vault 路径检查 + 默认 ~/Documents/KEA-Vault）和 Step 1.6（5 个 Obsidian 插件每次检查/自动安装/状态展示） |
 | 4.1.0 | 2026-04-28 | Phase 5-8 预处理改造（FLOWCHART_CANDIDATES / OBJECT_REGISTRY / LOGIC_REGISTRY / ACTION_REGISTRY / RULE_CANDIDATES）；kea mermaid 修复 .md 文件解析 |
 | 4.0.0 | 2026-04-25 | 初始发布 |
+

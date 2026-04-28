@@ -95,62 +95,64 @@ KEA 审视工作流依赖以下 5 个插件。每次触发时检查安装状态�
 | `obsidian-mermaid-links` | `vinayaugustine/obsidian-mermaid-links` | 流程图节点一键跳转 Mermaid Live Editor |
 | `breadcrumbs` | `SkepticMystic/breadcrumbs` | 语义关系矩阵视图（Matrix/Tree） |
 
-执行以下脚本检查并安装：
+使用 Python 标准库执行检查与安装（跨平台，无外部依赖）：
 
-```bash
-bash -c '
-VAULT_PATH="{VAULT_PATH}"
-PLUGIN_DIR="$VAULT_PATH/.obsidian/plugins"
-ENABLED_JSON="$VAULT_PATH/.obsidian/community-plugins.json"
-INSTALLED=0
+```python
+import urllib.request, urllib.error, json, pathlib, shutil
 
-mkdir -p "$PLUGIN_DIR"
-[ ! -f "$ENABLED_JSON" ] && echo "[]" > "$ENABLED_JSON"
+VAULT_PATH = pathlib.Path("{VAULT_PATH}").expanduser()
+PLUGINS = [
+    ("obsidian-hover-editor",  "nothingislost/obsidian-hover-editor"),
+    ("code-styler",            "mayurankv/Obsidian-Code-Styler"),
+    ("dataview",               "blacksmithgu/obsidian-dataview"),
+    ("obsidian-mermaid-links", "vinayaugustine/obsidian-mermaid-links"),
+    ("breadcrumbs",            "SkepticMystic/breadcrumbs"),
+]
 
-install_plugin() {
-  local id=$1 repo=$2 status="✅ 已就绪"
-  if [ ! -f "$PLUGIN_DIR/$id/manifest.json" ]; then
-    mkdir -p "$PLUGIN_DIR/$id"
-    if curl -sL --fail "https://github.com/$repo/releases/latest/download/main.js" \
-         -o "$PLUGIN_DIR/$id/main.js" 2>/dev/null && \
-       curl -sL --fail "https://github.com/$repo/releases/latest/download/manifest.json" \
-         -o "$PLUGIN_DIR/$id/manifest.json" 2>/dev/null; then
-      curl -sL --fail "https://github.com/$repo/releases/latest/download/styles.css" \
-        -o "$PLUGIN_DIR/$id/styles.css" 2>/dev/null || true
-      status="🆕 已安装"
-      INSTALLED=$((INSTALLED+1))
-    else
-      rm -rf "$PLUGIN_DIR/$id"
-      status="❌ 安装失败（手动安装：https://github.com/$repo/releases）"
-    fi
-  fi
-  echo "  $status  $id"
-}
+plugin_dir   = VAULT_PATH / ".obsidian" / "plugins"
+enabled_json = VAULT_PATH / ".obsidian" / "community-plugins.json"
 
-enable_plugin() {
-  python3 -c "
-import json
-with open(\"$ENABLED_JSON\") as f: p = json.load(f)
-if \"$1\" not in p: p.append(\"$1\")
-with open(\"$ENABLED_JSON\", \"w\") as f: json.dump(p, f)
-"
-}
+plugin_dir.mkdir(parents=True, exist_ok=True)
+if not enabled_json.exists():
+    enabled_json.write_text("[]", encoding="utf-8")
 
-echo "Obsidian 插件状态："
-install_plugin "obsidian-hover-editor"  "nothingislost/obsidian-hover-editor"  && enable_plugin "obsidian-hover-editor"
-install_plugin "code-styler"            "mayurankv/Obsidian-Code-Styler"        && enable_plugin "code-styler"
-install_plugin "dataview"               "blacksmithgu/obsidian-dataview"        && enable_plugin "dataview"
-install_plugin "obsidian-mermaid-links" "vinayaugustine/obsidian-mermaid-links" && enable_plugin "obsidian-mermaid-links"
-install_plugin "breadcrumbs"            "SkepticMystic/breadcrumbs"             && enable_plugin "breadcrumbs"
+newly_installed = 0
+print("Obsidian 插件状态：")
 
-echo ""
-if [ "$INSTALLED" -gt 0 ]; then
-  echo "⚠️  新安装了 $INSTALLED 个插件。请在 Obsidian 中执行："
-  echo "   Settings → Community plugins → 点击「重载插件」使新插件生效。"
-else
-  echo "ℹ️  请确认 Obsidian 已加载上述插件（首次使用时需在 Obsidian 中重载一次）。"
-fi
-'
+for plugin_id, repo in PLUGINS:
+    pdir = plugin_dir / plugin_id
+    if (pdir / "manifest.json").exists():
+        print(f"  ✅ 已就绪  {plugin_id}")
+        continue
+    pdir.mkdir(exist_ok=True)
+    base = f"https://github.com/{repo}/releases/latest/download"
+    try:
+        for fname in ["main.js", "manifest.json"]:
+            urllib.request.urlretrieve(f"{base}/{fname}", pdir / fname)
+        try:
+            urllib.request.urlretrieve(f"{base}/styles.css", pdir / "styles.css")
+        except urllib.error.HTTPError:
+            pass  # styles.css 可选
+        print(f"  🆕 已安装  {plugin_id}")
+        newly_installed += 1
+    except Exception as e:
+        shutil.rmtree(pdir, ignore_errors=True)
+        print(f"  ❌ 安装失败  {plugin_id}（{e}）")
+        print(f"     手动安装：https://github.com/{repo}/releases")
+
+# 同步 community-plugins.json
+enabled = json.loads(enabled_json.read_text(encoding="utf-8"))
+for plugin_id, _ in PLUGINS:
+    if plugin_id not in enabled:
+        enabled.append(plugin_id)
+enabled_json.write_text(json.dumps(enabled), encoding="utf-8")
+
+print()
+if newly_installed > 0:
+    print(f"⚠️  新安装了 {newly_installed} 个插件，请在 Obsidian 中执行：")
+    print("   Settings → Community plugins → 点击「重载插件」使新插件生效。")
+else:
+    print("ℹ️  请确认 Obsidian 已加载上述插件（首次使用时需在 Obsidian 中重载一次）。")
 ```
 
 ### Step 2: 确定领域
