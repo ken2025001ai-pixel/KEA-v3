@@ -367,7 +367,7 @@ def cmd_mermaid(args: argparse.Namespace) -> int:
         chart = parse_mermaid_file(target)
         results.append(chart.to_dict())
     else:
-        for f in sorted(target.glob("*.mermaid")):
+        for f in sorted(target.glob("*.md")):
             chart = parse_mermaid_file(f)
             d = chart.to_dict()
             d["file"] = str(f)

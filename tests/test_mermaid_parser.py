@@ -43,3 +43,21 @@ class TestParseFileMd:
         labels = {n.label for n in chart.nodes}
         assert "第一个块" in labels
         assert "第二个块" not in labels
+
+
+class TestCmdMermaidDir:
+    def test_directory_mode_scans_md_files(self, tmp_path):
+        """目录模式应 glob *.md 文件，不只扫描 *.mermaid。"""
+        f = tmp_path / "流程.md"
+        f.write_text(
+            "```mermaid\nflowchart TD\n  A[库存] --> B[出库单]\n```\n",
+            encoding="utf-8",
+        )
+        from pathlib import Path
+        from kea.parser.mermaid_parser import parse_file
+        files = sorted(Path(tmp_path).glob("*.md"))
+        assert len(files) == 1
+        chart = parse_file(str(files[0]))
+        labels = {n.label for n in chart.nodes}
+        assert "库存" in labels
+        assert "出库单" in labels
