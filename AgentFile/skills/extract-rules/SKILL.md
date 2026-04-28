@@ -38,16 +38,21 @@ Inputs are provided by the orchestration phase file (phase-8) based on current s
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
-| `SUMMARY_PATHS` | No | Source material (flowchart summaries, research reports, requirement docs). Used to find implicit rules stated in text. |
-| `REPORT_PATHS` | No | Supplementary context files. |
+| `RULE_CANDIDATES` | **Yes** | **Primary source**. Pre-identified and user-confirmed list of rule candidates, collected by Phase 8. Each entry includes rule name, type classification, source document, and condition text. This is your complete extraction scope. **Do NOT re-scan LOGIC_DIR, ACTIONS_DIR, or OBJECTS_DIR.** |
+| `LOGIC_REGISTRY` | **Yes** | Structured logic index from `kea parse`. Use for `guards` relation declarations (which logic id does this rule guard). |
+| `ACTION_REGISTRY` | **Yes** | Structured action index from `kea parse`. Use for `constrains` relation declarations on actions. |
+| `OBJECT_REGISTRY` | **Yes** | Structured object index from `kea parse`. Use for `constrains` relation declarations on objects and field-level reference validation in `rule_expression`. |
+| `SUMMARY_PATHS` | No | Supplementary policy context. |
+
+**Source priority**: `RULE_CANDIDATES` > `LOGIC_REGISTRY` > `ACTION_REGISTRY` > `OBJECT_REGISTRY` > `SUMMARY_PATHS`
 
 ### Upstream Artifacts (cross-reference constraints)
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
-| `LOGIC_DIR` | **Yes** | Phase 6 output. Read all logic docs to identify guards (前置条件 sections, conditional branches with threshold checks). |
-| `ACTIONS_DIR` | **Yes** | Phase 7 output. Read all action docs to identify validation rules (input parameter constraints, exception conditions). |
-| `OBJECTS_DIR` | **Yes** | Phase 5 output. Read all object docs to identify derivation rules (computed fields) and validation constraints on attributes. |
+| `LOGIC_REGISTRY` | **Yes** | Phase 8 pre-processed output from `kea parse {LOGIC_DIR}`. Use for `guards` relation declarations. |
+| `ACTION_REGISTRY` | **Yes** | Phase 8 pre-processed output from `kea parse {ACTIONS_DIR}`. Use for `constrains` relation declarations on actions. |
+| `OBJECT_REGISTRY` | **Yes** | Phase 8 pre-processed output from `kea parse {OBJECTS_DIR}`. Use for `constrains` relation declarations on objects and field validation. Never reference fields not listed here. |
 
 ### Output Location
 
@@ -64,29 +69,26 @@ Inputs are provided by the orchestration phase file (phase-8) based on current s
 
 ## Step 1: Read inputs and identify rule candidates
 
-Read all files in OBJECTS_DIR, LOGIC_DIR, ACTIONS_DIR. For each:
+Read `RULE_CANDIDATES` — pre-identified and user-confirmed list of rule candidates,
+collected by Phase 8 from all upstream documents. Each entry includes rule name,
+type classification, source document, and condition text. This is your complete
+extraction scope. **Do NOT re-scan LOGIC_DIR, ACTIONS_DIR, or OBJECTS_DIR.**
 
-**From object docs** — scan for:
-- Attribute descriptions mentioning ranges, constraints, required conditions
-- Enumerated state values (potential validation targets)
-- Computed/derived fields
+Read `LOGIC_REGISTRY` for `guards` relation declarations (which logic id does
+this rule guard as a precondition).
 
-**From logic docs** — scan for:
-- Threshold conditions in decision branches (e.g., "金额 > 10万 → 走高级审批")
-- Stated preconditions in 业务描述
-- Exception branches that indicate violated invariants
+Read `ACTION_REGISTRY` for `constrains` relation declarations on actions (which
+action id does this validation/guard rule constrain).
 
-**From action docs** — scan for:
-- Input parameter constraints (required fields, type constraints, range checks)
-- Exception handling entries that reflect business invariants
-- Trigger conditions that encode guard rules
+Read `OBJECT_REGISTRY` for `constrains` relation declarations on objects and for
+field-level reference validation (e.g., `采购订单.总金额` must exist in OBJECT_REGISTRY
+before it can appear in `rule_expression`).
 
-**From SUMMARY_PATHS (if provided)** — scan for:
-- Regulatory or policy statements ("必须"/"不得"/"要求")
-- Threshold values in business text
-- Derivation formulas in financial/calculation contexts
+Read `SUMMARY_PATHS` (if provided) for supplementary policy context.
 
-Build a **deduplicated** list of rule candidates. For each candidate, determine `rule_type`.
+**Do NOT read files from LOGIC_DIR, ACTIONS_DIR, or OBJECTS_DIR** — the tools
+have already done that. The rule candidates and their context are fully captured in
+RULE_CANDIDATES.
 
 ## Step 2: Extract rules
 
@@ -218,7 +220,7 @@ Return status and summary to the phase file. **Do NOT ask any questions or inter
 
 ```
 状态：NEEDS_CONTEXT
-缺少信息：{具体说明}
+缺少信息：{具体说明，如"RULE_CANDIDATES 为空，无规则候选数据"}
 ```
 
 **If blocked:**
