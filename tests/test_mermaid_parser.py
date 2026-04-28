@@ -46,18 +46,28 @@ class TestParseFileMd:
 
 
 class TestCmdMermaidDir:
-    def test_directory_mode_scans_md_files(self, tmp_path):
-        """目录模式应 glob *.md 文件，不只扫描 *.mermaid。"""
+    def test_directory_mode_scans_md_files(self, tmp_path, capsys):
+        """目录模式应 glob *.md，cmd_mermaid 应正确解析目录中的 .md 文件。"""
         f = tmp_path / "流程.md"
         f.write_text(
             "```mermaid\nflowchart TD\n  A[库存] --> B[出库单]\n```\n",
             encoding="utf-8",
         )
-        from pathlib import Path
-        from kea.parser.mermaid_parser import parse_file
-        files = sorted(Path(tmp_path).glob("*.md"))
-        assert len(files) == 1
-        chart = parse_file(str(files[0]))
-        labels = {n.label for n in chart.nodes}
-        assert "库存" in labels
-        assert "出库单" in labels
+        import argparse
+        from kea.cli import cmd_mermaid
+        args = argparse.Namespace(target=str(tmp_path), format="human")
+        cmd_mermaid(args)
+        out = capsys.readouterr().out
+        assert "库存" in out
+        assert "出库单" in out
+
+    def test_directory_mode_ignores_mermaid_extension(self, tmp_path, capsys):
+        """.mermaid 文件在目录模式下应被忽略（只 glob *.md）。"""
+        f = tmp_path / "流程.mermaid"
+        f.write_text("flowchart TD\n  A[仅限旧格式] --> B[节点B]\n", encoding="utf-8")
+        import argparse
+        from kea.cli import cmd_mermaid
+        args = argparse.Namespace(target=str(tmp_path), format="human")
+        cmd_mermaid(args)
+        out = capsys.readouterr().out
+        assert "仅限旧格式" not in out
