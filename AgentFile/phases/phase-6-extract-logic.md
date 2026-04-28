@@ -13,8 +13,8 @@
 | `CHAIN_STATE_PATH` | chain-state 文件路径 |
 | `RESEARCH_REPORT_PATH` | G1 调研报告路径 |
 | `INTERVIEW_SUMMARY_PATH` | G2 访谈摘要路径 |
-| `DIAGRAMS_DIR` | G3/G4 已校验流程图目录 |
-| `OBJECTS_DIR` | Phase 5 输出的对象文档目录 |
+| `DIAGRAMS_DIR` | G3/G4 已校验流程图目录（Step 2.5 由工具扫描，结果以 FLOWCHART_CANDIDATES 形式传入 subagent） |
+| `OBJECTS_DIR` | Phase 5 输出的对象文档目录（Step 2.5 由工具扫描，结果以 OBJECT_REGISTRY 形式传入 subagent） |
 | `COVERAGE_THRESHOLD` | 覆盖率阈值（来自 chain-state.md） |
 
 ## 前置条件检查
@@ -35,14 +35,60 @@
 
 ### Step 2: 更新 chain-state.md 为 in_progress
 
+### Step 2.5: 预处理流程图与对象上下文
+
+**工具调用 1**：扫描流程图结构
+
+```bash
+python3 -m kea --format json mermaid {DIAGRAMS_DIR}
+```
+
+**成功**（`count > 0`）→ 生成 `FLOWCHART_CANDIDATES` 文本：
+
+```
+流程图扫描结果（{count} 个文件，{总节点数} 个节点，{总边数} 条边）：
+
+文件：{chart.file}
+  节点：{label}[{type}], {label}[{type}] ...
+  边标签：{edge.label}, {edge.label} ...（仅非空 label）
+```
+
+**失败**（`count = 0` 或命令报错）→ 展示错误详情，询问用户：
+- A 检查 DIAGRAMS_DIR 路径后重试
+- B 跳过工具扫描（fallback：Step 3 仍传 `DIAGRAMS_DIR`，subagent 自行读文件）
+
+---
+
+**工具调用 2**：扫描对象注册表
+
+```bash
+python3 -m kea --format json parse {OBJECTS_DIR}
+```
+
+**成功**（`count > 0`）→ 从 JSON 中筛选 `type=object` 的文档，生成 `OBJECT_REGISTRY` 文本：
+
+```
+已确认对象（{N} 个）：
+
+{对象名} (id={id})
+  属性：{属性名}[{类型},主键], {属性名}[{类型}] ...
+
+{对象名} (id={id})
+  属性：...
+```
+
+**失败**（`count = 0` 或命令报错）→ 展示错误详情，询问用户：
+- A 检查 OBJECTS_DIR 路径后重试
+- B 跳过对象扫描（fallback：Step 3 仍传 `OBJECTS_DIR`，subagent 自行读文件）
+
 ### Step 3: Dispatch 逻辑提取 Agent
 
 读取 `~/.claude/skills/kea/skills/extract-logic/SKILL.md`，Dispatch：
 
 ```
-DIAGRAMS_DIR: {DIAGRAMS_DIR}
+FLOWCHART_CANDIDATES: {Step 2.5 生成的流程图扫描文本}
+OBJECT_REGISTRY: {Step 2.5 生成的对象注册表文本}
 SUMMARY_PATHS: {RESEARCH_REPORT_PATH},{INTERVIEW_SUMMARY_PATH}
-OBJECTS_DIR: {OBJECTS_DIR}
 LOGIC_DIR: {VAULT_PATH}/30-Ontology/logic/{DOMAIN_EN}/
 EXISTING_FILES: {EXISTING_FILES（如有）}
 ```
