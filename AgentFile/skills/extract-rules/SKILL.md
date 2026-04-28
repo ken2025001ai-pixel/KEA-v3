@@ -50,9 +50,9 @@ Inputs are provided by the orchestration phase file (phase-8) based on current s
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
-| `LOGIC_REGISTRY` | **Yes** | Phase 8 pre-processed output from `kea parse {LOGIC_DIR}`. Use for `guards` relation declarations. |
-| `ACTION_REGISTRY` | **Yes** | Phase 8 pre-processed output from `kea parse {ACTIONS_DIR}`. Use for `constrains` relation declarations on actions. |
-| `OBJECT_REGISTRY` | **Yes** | Phase 8 pre-processed output from `kea parse {OBJECTS_DIR}`. Use for `constrains` relation declarations on objects and field validation. Never reference fields not listed here. |
+| `LOGIC_REGISTRY` | **Yes** | Phase 8 pre-processed logic index. Use for `guards` relation declarations. |
+| `ACTION_REGISTRY` | **Yes** | Phase 8 pre-processed action index. Use for `constrains` relation declarations on actions. |
+| `OBJECT_REGISTRY` | **Yes** | Phase 8 pre-processed object index. Use for `constrains` relation declarations on objects and field validation. Never reference fields not listed here. |
 
 ### Output Location
 

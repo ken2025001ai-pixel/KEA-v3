@@ -62,8 +62,8 @@ Inputs are provided by the orchestration phase file (phase-7) based on current s
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
-| `LOGIC_REGISTRY` | **Yes** | Phase 7 pre-processed output from `kea parse {LOGIC_DIR}`. Use to identify which logic id calls each action for `part_of` declarations. Never reference logics not listed here. |
-| `OBJECT_REGISTRY` | **Yes** | Phase 7 pre-processed output from `kea parse {OBJECTS_DIR}`. Use for object link validation and `uses`/`modifies` relation declarations. Never link to objects not listed here. |
+| `LOGIC_REGISTRY` | **Yes** | Phase 7 pre-processed logic index. Use to identify which logic id calls each action for `part_of` declarations. Never reference logics not listed here. |
+| `OBJECT_REGISTRY` | **Yes** | Phase 7 pre-processed object index. Use for object link validation and `uses`/`modifies` relation declarations. Never link to objects not listed here. |
 
 ### Output Location
 
