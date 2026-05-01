@@ -85,7 +85,7 @@ Identify candidate business objects using the following confidence tiers:
 
 If multiple sources mention the same object, consolidate using the most detailed description. When `FLOWCHART_CANDIDATES` and `SUMMARY_PATHS` conflict on object names, `FLOWCHART_CANDIDATES` wins (expert-validated flowcharts are authoritative).
 
-Read `~/.claude/skills/kea/templates/object-template.md` to understand the required output format.
+Read `{KEA_TOOLS_ROOT}/templates/object-template.md` to understand the required output format.
 
 ## Step 2: Extract business objects
 
@@ -178,7 +178,7 @@ stateDiagram-v2
 cd {KEA_TOOLS_ROOT} && python3 -m kea --format json parse {OBJECTS_DIR}/{名称}.md
 ```
 
-从 `~/.claude/skills/kea/config.md` 读取 `KEA_TOOLS_ROOT`。
+从 `{KEA_TOOLS_ROOT}/config.md` 读取 `KEA_TOOLS_ROOT`。
 
 - 若 `"success": true` → 继续下一个
 - 若解析失败 → 检查 YAML front matter 和表格格式，修正后重试 parse，直到通过

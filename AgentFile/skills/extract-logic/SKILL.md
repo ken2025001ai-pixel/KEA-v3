@@ -121,6 +121,8 @@ Each flowchart generally corresponds to one logic document. For each:
 
 **Skip if in EXISTING_FILES or not in 补充提取目标 (when set).**
 
+Read `{KEA_TOOLS_ROOT}/templates/logic-template.md` to understand the required output format.
+
 Write `LOGIC_DIR/{流程名称}.md` following `logic-template.md`. **CRITICAL**: populate `agent_context`, `inputs`/`outputs` in YAML front matter, proper pseudo-code with `assert`/`if`/`call_action`.
 
 ```markdown
@@ -255,7 +257,7 @@ function rollback({上下文参数}):
 cd {KEA_TOOLS_ROOT} && python3 -m kea --format json parse {LOGIC_DIR}/{流程名}.md
 ```
 
-从 `~/.claude/skills/kea/config.md` 读取 `KEA_TOOLS_ROOT`。若 `"success": true` → 继续下一个。若解析失败 → 修复后重试直到通过。
+从 `{KEA_TOOLS_ROOT}/config.md` 读取 `KEA_TOOLS_ROOT`。若 `"success": true` → 继续下一个。若解析失败 → 修复后重试直到通过。
 
 ## Step 3: Return structured result
 

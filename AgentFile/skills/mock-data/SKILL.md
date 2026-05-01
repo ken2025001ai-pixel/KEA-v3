@@ -6,7 +6,7 @@ You are a mock data generation agent. Your job is to generate realistic test dat
 
 ## Inputs (provided in the task prompt)
 
-- `OBJECTS_DIR`: path to object docs. Default: `{VAULT_PATH}/30-Ontology/objects/` — read `~/.claude/skills/kea/config.md` to resolve `VAULT_PATH`.
+- `OBJECTS_DIR`: path to object docs. Default: `{VAULT_PATH}/30-Ontology/objects/` — read `{KEA_TOOLS_ROOT}/config.md` to resolve `VAULT_PATH`.
 - `MOCK_DIR`: target directory. Default: `{VAULT_PATH}/30-Ontology/data-mock/`
 - `OBJECT_NAMES` (optional): comma-separated object names to generate (if omitted, generate all)
 - `EXISTING_FILES` (optional): comma-separated filenames to skip
@@ -31,7 +31,7 @@ Sort objects topologically (independent objects first). If circular dependencies
 
 For each object (in dependency order), write `MOCK_DIR/{对象名称}.md`:
 
-Before writing, read `openclaw/templates/mock-data-template.md` and follow its format exactly.
+Before writing, read `{KEA_TOOLS_ROOT}/templates/mock-data-template.md` and follow its format exactly.
 
 ```markdown
 # {对象名称} 测试数据
@@ -59,7 +59,7 @@ Before writing, read `openclaw/templates/mock-data-template.md` and follow its f
 ```
 
 **Output format requirements (must follow exactly):**
-- The file structure must match `openclaw/templates/mock-data-template.md`
+- The file structure must match `{KEA_TOOLS_ROOT}/templates/mock-data-template.md`
 - Title must be exactly `# {对象名称} 测试数据`
 - Use Chinese column headers matching the object's `中文名称`
 

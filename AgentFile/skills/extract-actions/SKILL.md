@@ -104,6 +104,8 @@ For each unique action referenced in logic docs:
 
 **Skip if in EXISTING_FILES or not in 补充提取目标 (when set).**
 
+Read `{KEA_TOOLS_ROOT}/templates/action-template.md` to understand the required output format.
+
 Write `ACTIONS_DIR/{动作名称}.md` following `action-template.md`. **CRITICAL**: populate `agent_context`, `inputs`/`outputs` in YAML front matter, proper `function` pseudo-code.
 
 ```markdown
@@ -231,7 +233,7 @@ function rollback({参数}):
 cd {KEA_TOOLS_ROOT} && python3 -m kea --format json parse {ACTIONS_DIR}/{动作名}.md
 ```
 
-从 `~/.claude/skills/kea/config.md` 读取 `KEA_TOOLS_ROOT`。若 `"success": true` → 继续下一个。若解析失败 → 修复后重试直到通过。
+从 `{KEA_TOOLS_ROOT}/config.md` 读取 `KEA_TOOLS_ROOT`。若 `"success": true` → 继续下一个。若解析失败 → 修复后重试直到通过。
 
 ## Step 3: Return structured result
 

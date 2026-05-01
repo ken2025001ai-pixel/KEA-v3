@@ -96,6 +96,8 @@ For each unique rule candidate:
 
 **Skip if in EXISTING_FILES or not in 补充提取目标 (when set).**
 
+Read `{KEA_TOOLS_ROOT}/templates/rule-template.md` to understand the required output format.
+
 Write `RULES_DIR/{规则名称}.md` following `rule-template.md`. Use English snake_case for filename. **CRITICAL**: populate all YAML fields including `category`, `rule_type`, `severity`, `applies_to`, `trigger`, `rule_expression`, `error_message`.
 
 ```markdown
@@ -183,7 +185,7 @@ THEN {结论或要求的状态}
 cd {KEA_TOOLS_ROOT} && python3 -m kea --format json parse {RULES_DIR}/{规则名}.md
 ```
 
-从 `~/.claude/skills/kea/config.md` 读取 `KEA_TOOLS_ROOT`。若 `"success": true` → 继续下一个。若解析失败 → 修复后重试直到通过。
+从 `{KEA_TOOLS_ROOT}/config.md` 读取 `KEA_TOOLS_ROOT`。若 `"success": true` → 继续下一个。若解析失败 → 修复后重试直到通过。
 
 ## Step 3: Return structured result
 

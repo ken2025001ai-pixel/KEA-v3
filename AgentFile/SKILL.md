@@ -101,6 +101,8 @@ PROJECT_ROOT    = KEA_TOOLS_ROOT（传给 phase 文件，用于 cd {PROJECT_ROOT
 
 完成后展示各插件安装状态（✅ 已就绪 / 🆕 已安装 / ❌ 失败），并提示用户在 Obsidian 中重载插件。
 
+**Breadcrumbs 配置**：Breadcrumbs 安装后需配置 Edge Fields 才能显示语义关系矩阵。读取 `{KEA_TOOLS_ROOT}/templates/breadcrumbs-config.md`，按其中 "Breadcrumbs Edge Fields 配置" 一节在 Breadcrumbs Settings → Edge Fields 中添加对应关系类型（part_of / follows / precedes / uses / produces / calls 等）。
+
 ### Step 2: 确定领域
 
 若用户未指定领域，询问：
