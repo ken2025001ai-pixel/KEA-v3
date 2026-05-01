@@ -140,10 +140,7 @@ updated_at: {YYYY-MM-DD HH:MM}
 | 2 | 专家访谈 | ⏳ 待执行 | — | — |
 | 3 | 流程图生成 | ⏳ 待执行 | — | — |
 | 4 | 流程图校验 | ⏳ 待执行 | — | — |
-| 5 | 对象提取 | ⏳ 待执行 | — | — |
-| 6 | 逻辑提取 | ⏳ 待执行 | — | — |
-| 7 | 动作提取 | ⏳ 待执行 | — | — |
-| 8 | 规则提取 | ⏳ 待执行 | — | — |
+| 5 | 本体提取 | ⏳ 待执行 | — | — |
 | 9 | 结构校验 | ⏳ 待执行 | — | — |
 | 10 | 语义校验 | ⏳ 待执行 | — | — |
 | 11 | 完备性验证 | ⏳ 待执行 | — | — |
@@ -159,13 +156,10 @@ updated_at: {YYYY-MM-DD HH:MM}
   Phase 2  专家访谈      ✅ 通过  2026-04-20
   Phase 3  流程图生成    ✅ 通过  2026-04-21（共 5 个流程图）
   Phase 4  流程图校验    ✅ 通过  2026-04-21
-  Phase 5  对象提取      ✅ 通过  2026-04-21（共 12 个对象）
-  Phase 6  逻辑提取      ✅ 通过  2026-04-21（共 8 个逻辑）
-  Phase 7  动作提取      🔄 进行中
-  Phase 8  规则提取      ⏳ 待执行
-  ...
+  Phase 5  本体提取      ✅ 通过  2026-04-21（对象12 逻辑8 动作20 规则3）
+  Phase 9  结构校验      🔄 进行中
 
-  → 继续执行 Phase 7（动作提取）
+  → 继续执行 Phase 9（结构校验）
 ```
 
 ### Step 4: 路由到当前阶段
@@ -178,10 +172,7 @@ updated_at: {YYYY-MM-DD HH:MM}
 | 2 | `~/.claude/skills/kea/phases/phase-2-interview.md` |
 | 3 | `~/.claude/skills/kea/phases/phase-3-flowchart-generate.md` |
 | 4 | `~/.claude/skills/kea/phases/phase-4-flowchart-validate.md` |
-| 5 | `~/.claude/skills/kea/phases/phase-5-extract-objects.md` |
-| 6 | `~/.claude/skills/kea/phases/phase-6-extract-logic.md` |
-| 7 | `~/.claude/skills/kea/phases/phase-7-extract-actions.md` |
-| 8 | `~/.claude/skills/kea/phases/phase-8-extract-rules.md` |
+| 5 | `~/.claude/skills/kea/phases/phase-5-extract-ontology.md` |
 | 9 | `~/.claude/skills/kea/phases/phase-9-rule-check.md` |
 | 10 | `~/.claude/skills/kea/phases/phase-10-semantic-check.md` |
 | 11 | `~/.claude/skills/kea/phases/phase-11-coverage-check.md` |
@@ -241,10 +232,7 @@ Phase 1  领域调研      → 生成调研报告，确认候选清单
 Phase 2  专家访谈      → 评估报告质量，专家确认 gap，按需定向补充  [不可跳过]
 Phase 3  流程图生成    → 生成 Mermaid 流程图，专家逐图确认
 Phase 4  流程图校验    → 结构 + 语义 13 项校验，严重问题=0    [硬性]
-Phase 5  对象提取      → 提取所有业务对象，覆盖率≥80%
-Phase 6  逻辑提取      → 提取业务流程，死链=0（最高优先级）
-Phase 7  动作提取      → 提取动作，引用动作100%覆盖
-Phase 8  规则提取      → 提取业务规则（允许零规则但需确认）
+Phase 5  本体提取      → 对象→逻辑→动作→规则流水线，每类硬门 errors=0+dead_links=0，最终1次专家确认
 Phase 9  结构校验      → 结构错误=0                           [硬性，不可绕过]
 Phase 10 语义校验      → 语义错误=0                           [硬性，不可绕过]
 Phase 11 完备性验证    → 每个未覆盖项有A/B/C决策
