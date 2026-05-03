@@ -49,7 +49,7 @@
 
 ### Step 3: 一次性预处理所有源文档
 
-**工具调用 1**：扫描流程图（objects 和 logic 共用）
+**工具调用 1**：扫描流程图（作为辅助上下文，供 objects 确认出现范围，供 logic 获取结构骨架）
 
 ```bash
 python3 -m kea --format json mermaid {DIAGRAMS_DIR}
@@ -65,7 +65,7 @@ python3 -m kea --format json mermaid {DIAGRAMS_DIR}
   边标签：{edge.label}, {edge.label} ...（仅非空 label）
 ```
 
-**失败** → 询问用户：A 检查路径后重试 / B 跳过（subagent 将无流程图候选，基于文字摘要提取）
+**失败**（count = 0 或命令报错）→ 静默跳过，`FLOWCHART_CANDIDATES` 置为空字符串，继续执行。主源（研究报告+访谈摘要）不受影响。
 
 ---
 
